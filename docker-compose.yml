@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: votacao_comara_app
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    environment:
+      - APP_ENV=development
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_NAME=comara_votacao
+      - DB_USER=comara_user
+      - DB_PASS=comara_secret_2026
+      - LDAP_LOCAL_FALLBACK=true
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.0
+    container_name: votacao_comara_db
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: root_secret_2026
+      MYSQL_DATABASE: comara_votacao
+      MYSQL_USER: comara_user
+      MYSQL_PASSWORD: comara_secret_2026
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./database/seeders.sql:/docker-entrypoint-initdb.d/02_seeders.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_secret_2026"]
+      timeout: 5s
+      retries: 15
+      interval: 3s
+
+volumes:
+  db_data:

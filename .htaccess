@@ -1,0 +1,28 @@
+# =============================================================================
+# APACHE / LITESPEED HTACCESS RAIZ - SISTEMA DE VOTAÇÃO COMARA
+# =============================================================================
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Bloqueio de arquivos e diretórios sensíveis
+    RewriteRule ^\.(env|git) - [F,L]
+    RewriteRule ^(config|database|src|views|scripts|backups|cache) - [F,L]
+
+    # Se a requisição já for para public, mantém
+    RewriteCond %{REQUEST_URI} ^/public/ [NC]
+    RewriteRule ^ - [L]
+
+    # Encaminha para public/index.php preservando query strings
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ public/index.php?r=$1 [QSA,L]
+</IfModule>
+
+# Proteção de Cabeçalhos
+<IfModule mod_headers.c>
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set X-Content-Type-Options "nosniff"
+</IfModule>

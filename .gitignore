@@ -1,0 +1,29 @@
+# Arquivo de Variáveis de Ambiente local (contém senhas e chaves)
+.env
+.env.local
+
+# Backups gerados
+/backups/*
+!/backups/.gitkeep
+!/backups/daily/
+!/backups/weekly/
+
+# Cache local
+/cache/*
+!/cache/.gitkeep
+
+# Uploads de fotos locais
+/public/uploads/fotos/*
+!/public/uploads/fotos/.gitkeep
+
+# Arquivos temporários e logs
+*.log
+scratch/
+/tmp/
+
+# IDE e Sistema Operacional
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,27 @@
+# =============================================================================
+# APACHE / LITESPEED HTACCESS - SISTEMA DE VOTAÇÃO COMARA
+# =============================================================================
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Bloqueio de arquivos sensíveis
+    RewriteRule ^(config|database|src|views|scripts|backups|cache) - [F,L]
+
+    # Roteamento padrão
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php?r=$1 [QSA,L]
+</IfModule>
+
+# Proteção de Cabeçalhos
+<IfModule mod_headers.c>
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set X-Content-Type-Options "nosniff"
+</IfModule>
+
+# Tamanho máximo de upload
+php_value upload_max_filesize 25M
+php_value post_max_size 30M
