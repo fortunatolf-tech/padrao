@@ -39,8 +39,26 @@ require_once ROOT_PATH . '/views/layouts/header.php';
                 </form>
 
                 <div class="text-center mt-3 pt-3 border-top">
-                    <button type="button" class="btn btn-link btn-sm text-decoration-none text-muted" data-bs-toggle="modal" data-bs-target="#modalResetSenhaLogin">
-                        <i class="bi bi-key-fill text-warning me-1"></i> Esqueceu a senha? Resetar para <strong>padrao@2026</strong>
+                    <button type="button" 
+                            id="btnSuporteSenha"
+                            class="btn btn-sm btn-link text-decoration-none text-muted"
+                            data-bs-toggle="popover" 
+                            data-bs-placement="bottom"
+                            data-bs-trigger="focus"
+                            data-bs-html="true"
+                            data-bs-custom-class="popover-comara shadow"
+                            title="&lt;div class='fw-bold text-primary'&gt;&lt;i class='bi bi-shield-lock-fill me-1'&gt;&lt;/i&gt; Suporte de Senha &amp; Primeiro Acesso&lt;/div&gt;"
+                            data-bs-content="&lt;div class='p-1 text-dark'&gt;
+                                &lt;p class='small mb-2'&gt;
+                                    &lt;strong&gt;Esqueceu sua senha ou precisa redefinir?&lt;/strong&gt;&lt;br&gt;
+                                    Por motivos de segurança, a redefinição de senhas é realizada &lt;strong&gt;exclusivamente pelo Administrador do Sistema&lt;/strong&gt;. Favor entrar em contato com o &lt;strong&gt;Setor de TI (STI / COMARA)&lt;/strong&gt; para que seu acesso seja restabelecido.
+                                &lt;/p&gt;
+                                &lt;div class='alert alert-warning py-2 px-2 small mb-0 border-0 bg-warning-subtle text-dark'&gt;
+                                    &lt;i class='bi bi-exclamation-triangle-fill text-warning me-1'&gt;&lt;/i&gt;
+                                    &lt;strong&gt;Atenção ao Primeiro Acesso:&lt;/strong&gt; Aconselhamos que, no &lt;strong&gt;primeiro acesso&lt;/strong&gt; com a senha padrão institucional, &lt;strong&gt;sua senha seja alterada imediatamente&lt;/strong&gt; no menu de usuário para garantir o sigilo e a inviolabilidade do seu voto.
+                                &lt;/div&gt;
+                            &lt;/div&gt;">
+                        <i class="bi bi-question-circle-fill text-primary me-1"></i> Esqueceu a senha ou primeiro acesso?
                     </button>
                 </div>
             </div>
@@ -48,42 +66,16 @@ require_once ROOT_PATH . '/views/layouts/header.php';
     </div>
 </div>
 
-<!-- Modal Reset de Senha na Tela de Login -->
-<div class="modal fade" id="modalResetSenhaLogin" tabindex="-1" aria-labelledby="modalResetSenhaLoginLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content shadow-lg border-0">
-            <div class="modal-header bg-warning-subtle text-dark">
-                <h5 class="modal-title fw-bold" id="modalResetSenhaLoginLabel">
-                    <i class="bi bi-key-fill text-warning me-2"></i> Redefinir Senha de Acesso
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-            </div>
-            <form method="POST" action="/index.php?r=reset_senha_login">
-                <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
-                <div class="modal-body p-4">
-                    <p class="text-muted small mb-3">
-                        Informe o seu <strong>SARAM</strong> ou <strong>CPF</strong>. Ao confirmar, sua senha será restaurada para a senha padrão da COMARA: <code class="fw-bold text-dark">padrao@2026</code>.
-                    </p>
-                    <div class="mb-3">
-                        <label for="identificador_reset" class="form-label fw-semibold">SARAM ou CPF</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-white"><i class="bi bi-person-badge text-muted"></i></span>
-                            <input type="text" class="form-control" id="identificador_reset" name="identificador" required autofocus placeholder="Digite seu SARAM ou CPF">
-                        </div>
-                    </div>
-                    <div class="alert alert-info py-2 px-3 small mb-0">
-                        <i class="bi bi-info-circle me-1"></i> Após a confirmação, acesse com o seu usuário e a senha <strong>padrao@2026</strong>.
-                    </div>
-                </div>
-                <div class="modal-footer bg-light py-2">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-warning btn-sm fw-bold">
-                        <i class="bi bi-arrow-counterclockwise me-1"></i> Resetar para padrao@2026
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    popoverTriggerList.map(function (popoverTriggerEl) {
+        return new bootstrap.Popover(popoverTriggerEl, {
+            html: true,
+            sanitize: false
+        });
+    });
+});
+</script>
 
 <?php require_once ROOT_PATH . '/views/layouts/footer.php'; ?>

@@ -25,7 +25,7 @@ O processo obedece rigorosamente às 3 fases estatutárias:
 - **Autenticação Flexível e Segura**:
   - Login transparente com **SARAM** ou **CPF** (com ou sem pontuação).
   - Autenticação corporativa integrada ao **Active Directory / LDAP da INTRAER** com fallback local seguro para contingência.
-  - Troca de senha pelo próprio usuário e ferramenta de reset para `padrao@2026`.
+  - Troca de senha pelo próprio usuário autenticado (recomendada obrigatoriamente no primeiro acesso); redefinição e reset de senhas restritos com exclusividade ao **Administrador / Setor de TI (STI)** para garantia de segurança e inviolabilidade.
 - **Gestão Completa de Efetivo e Administradores**:
   - Base inicial oficial com **443 membros** já cadastrados com postos, quadros, especialidades e lotações.
   - O Administrador pode conceder ou revogar o perfil de **Administrador (`ADMIN`)** para qualquer membro do efetivo com 1 clique.

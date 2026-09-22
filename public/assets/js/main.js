@@ -125,4 +125,16 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('excluir_candidato_nome').textContent = candNome;
         });
     }
+
+    // 6. INICIALIZAÇÃO DE POPOVERS E TOOLTIPS (BOOTSTRAP 5)
+    const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
+    [...popoverTriggerList].forEach(el => {
+        new bootstrap.Popover(el, {
+            html: true,
+            sanitize: false
+        });
+    });
+
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    [...tooltipTriggerList].forEach(el => new bootstrap.Tooltip(el));
 });

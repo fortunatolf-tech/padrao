@@ -363,6 +363,13 @@ require_once ROOT_PATH . '/views/layouts/header.php';
                                                 <small class="text-muted"><?= sanitize_output($adm['setor'] ?: '') ?></small>
                                             </td>
                                             <td class="text-center">
+                                                <form method="POST" action="/index.php?r=admin/resetar_senha" class="d-inline me-1" onsubmit="return confirm('Deseja realmente redefinir a senha de <?= sanitize_output($adm['nome_guerra'] ?: $adm['login']) ?> para padrao@2026?')">
+                                                    <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                                                    <input type="hidden" name="usuario_id" value="<?= $adm['usuario_id'] ?>">
+                                                    <button type="submit" class="btn btn-outline-warning btn-sm" title="Resetar Senha para padrao@2026">
+                                                        <i class="bi bi-key-fill"></i> Resetar
+                                                    </button>
+                                                </form>
                                                 <?php if ($adm['login'] === 'admin'): ?>
                                                     <span class="badge bg-secondary" title="Conta raiz do sistema"><i class="bi bi-lock-fill me-1"></i> Principal</span>
                                                 <?php else: ?>

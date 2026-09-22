@@ -153,82 +153,45 @@ $rotaAtual = $_GET['r'] ?? 'dashboard';
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
             <div class="modal-body p-4">
-                <ul class="nav nav-pills nav-fill mb-4 p-1 bg-light rounded" id="pills-tab-senha" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active fw-semibold btn-sm" id="pills-nova-senha-tab" data-bs-toggle="pill" data-bs-target="#pills-nova-senha" type="button" role="tab" aria-selected="true">
-                            <i class="bi bi-key me-1"></i> Nova Senha
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link fw-semibold btn-sm text-warning-emphasis" id="pills-reset-padrao-tab" data-bs-toggle="pill" data-bs-target="#pills-reset-padrao" type="button" role="tab" aria-selected="false">
-                            <i class="bi bi-arrow-counterclockwise me-1"></i> Resetar para Padrão
-                        </button>
-                    </li>
-                </ul>
-
-                <div class="tab-content" id="pills-tabContent-senha">
-                    <!-- Tab 1: Nova Senha Customizada -->
-                    <div class="tab-pane fade show active" id="pills-nova-senha" role="tabpanel" aria-labelledby="pills-nova-senha-tab">
-                        <form method="POST" action="/index.php?r=alterar_senha">
-                            <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
-                            <input type="hidden" name="acao" value="alterar">
-
-                            <div class="mb-3">
-                                <label class="form-label small fw-semibold">Senha Atual</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light"><i class="bi bi-lock text-muted"></i></span>
-                                    <input type="password" name="senha_atual" class="form-control" placeholder="Digite sua senha atual" required>
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label small fw-semibold">Nova Senha (mínimo 6 caracteres)</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light"><i class="bi bi-shield-check text-muted"></i></span>
-                                    <input type="password" name="nova_senha" minlength="6" class="form-control" placeholder="Digite a nova senha" required>
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label small fw-semibold">Confirmar Nova Senha</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light"><i class="bi bi-shield-check text-muted"></i></span>
-                                    <input type="password" name="confirma_senha" minlength="6" class="form-control" placeholder="Repita a nova senha" required>
-                                </div>
-                            </div>
-
-                            <div class="d-grid mt-4">
-                                <button type="submit" class="btn btn-primary fw-bold">
-                                    <i class="bi bi-check-lg me-1"></i> Salvar Nova Senha
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- Tab 2: Reset para Senha Padrão (padrao@2026) -->
-                    <div class="tab-pane fade" id="pills-reset-padrao" role="tabpanel" aria-labelledby="pills-reset-padrao-tab">
-                        <div class="alert alert-warning border-warning-subtle py-3 px-3 mb-3">
-                            <div class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i> Restaurar Senha Padrão</div>
-                            <p class="small mb-0">
-                                Ao confirmar, sua senha será imediatamente alterada para a senha padrão institucional: <code class="fw-bold text-dark">padrao@2026</code>.
-                            </p>
-                        </div>
-                        <form method="POST" action="/index.php?r=alterar_senha">
-                            <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
-                            <input type="hidden" name="acao" value="reset_padrao">
-
-                            <p class="text-muted small mb-3">
-                                Esta opção é recomendada caso você queira unificar ou restaurar o acesso padrão da COMARA.
-                            </p>
-
-                            <div class="d-grid mt-3">
-                                <button type="submit" class="btn btn-warning fw-bold text-dark" onclick="return confirm('Tem certeza de que deseja resetar sua senha para padrao@2026?')">
-                                    <i class="bi bi-arrow-counterclockwise me-1"></i> Confirmar Reset para padrao@2026
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                <div class="alert alert-primary border-primary-subtle py-2 px-3 small mb-3">
+                    <i class="bi bi-shield-check text-primary me-1"></i>
+                    <strong>Segurança da Informação:</strong> No primeiro acesso ao sistema, é obrigatório definir uma nova senha pessoal para assegurar o sigilo do seu voto.
                 </div>
+
+                <form method="POST" action="/index.php?r=alterar_senha">
+                    <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                    <input type="hidden" name="acao" value="alterar">
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Senha Atual</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-lock text-muted"></i></span>
+                            <input type="password" name="senha_atual" class="form-control" placeholder="Digite sua senha atual" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Nova Senha (mínimo 6 caracteres)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-shield-lock text-muted"></i></span>
+                            <input type="password" name="nova_senha" minlength="6" class="form-control" placeholder="Digite a nova senha" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Confirmar Nova Senha</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-shield-lock-fill text-muted"></i></span>
+                            <input type="password" name="confirma_senha" minlength="6" class="form-control" placeholder="Repita a nova senha" required>
+                        </div>
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary fw-bold shadow-sm">
+                            <i class="bi bi-check-lg me-1"></i> Salvar Nova Senha
+                        </button>
+                    </div>
+                </form>
             </div>
             <div class="modal-footer bg-light py-2">
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fechar</button>
