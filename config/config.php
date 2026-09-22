@@ -24,6 +24,33 @@ if (!function_exists('env')) {
     }
 }
 
+// Polyfills para funções mb_* caso a extensão php-mbstring não esteja instalada no servidor
+if (!function_exists('mb_strtoupper')) {
+    function mb_strtoupper(string $string, ?string $encoding = 'UTF-8'): string {
+        return strtoupper($string);
+    }
+}
+if (!function_exists('mb_strtolower')) {
+    function mb_strtolower(string $string, ?string $encoding = 'UTF-8'): string {
+        return strtolower($string);
+    }
+}
+if (!function_exists('mb_strlen')) {
+    function mb_strlen(string $string, ?string $encoding = 'UTF-8'): int {
+        return strlen($string);
+    }
+}
+if (!function_exists('mb_substr')) {
+    function mb_substr(string $string, int $start, ?int $length = null, ?string $encoding = 'UTF-8'): string {
+        return $length === null ? substr($string, $start) : substr($string, $start, $length);
+    }
+}
+if (!function_exists('mb_strpos')) {
+    function mb_strpos(string $haystack, string $needle, int $offset = 0, ?string $encoding = 'UTF-8'): int|false {
+        return strpos($haystack, $needle, $offset);
+    }
+}
+
 // Carregamento automático de variáveis do arquivo .env (se existir)
 (static function() {
     $envFile = dirname(__DIR__) . '/.env';
