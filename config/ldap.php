@@ -15,12 +15,12 @@ class LdapAuth {
     private bool $localFallback;
 
     public function __construct() {
-        $this->host          = getenv('LDAP_HOST') ?: 'ldap.comara.intraer';
-        $this->port          = (int)(getenv('LDAP_PORT') ?: 389);
-        $this->domain        = getenv('LDAP_DOMAIN') ?: 'intraer';
-        $this->baseDn        = getenv('LDAP_BASE_DN') ?: 'DC=intraer,DC=fab,DC=mil,DC=br';
-        $this->useSsl        = (getenv('LDAP_USE_SSL') === 'true');
-        $this->localFallback = (getenv('LDAP_LOCAL_FALLBACK') !== 'false'); // Habilitado por padrão para contingência
+        $this->host          = (string)env('LDAP_HOST', 'ldap.comara.intraer');
+        $this->port          = (int)env('LDAP_PORT', 389);
+        $this->domain        = (string)env('LDAP_DOMAIN', 'intraer');
+        $this->baseDn        = (string)env('LDAP_BASE_DN', 'DC=intraer,DC=fab,DC=mil,DC=br');
+        $this->useSsl        = (bool)env('LDAP_USE_SSL', false);
+        $this->localFallback = (bool)env('LDAP_LOCAL_FALLBACK', true); // Habilitado por padrão para contingência
     }
 
     /**

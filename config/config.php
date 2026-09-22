@@ -3,6 +3,27 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/constants.php';
 
+// Função auxiliar segura para leitura de configurações do ambiente (compatível com aaPanel / disable_functions)
+if (!function_exists('env')) {
+    function env(string $key, mixed $default = null): mixed {
+        $val = $_ENV[$key] ?? ($_SERVER[$key] ?? (function_exists('getenv') ? getenv($key) : false));
+        if ($val === false || $val === null || $val === '') {
+            return $default;
+        }
+        if (is_string($val)) {
+            $lower = strtolower(trim($val));
+            return match ($lower) {
+                'true', '(true)' => true,
+                'false', '(false)' => false,
+                'empty', '(empty)' => '',
+                'null', '(null)' => null,
+                default => $val
+            };
+        }
+        return $val;
+    }
+}
+
 // Carregamento automático de variáveis do arquivo .env (se existir)
 (static function() {
     $envFile = dirname(__DIR__) . '/.env';
@@ -31,10 +52,14 @@ require_once __DIR__ . '/constants.php';
             (str_starts_with($value, "'") && str_ends_with($value, "'"))) {
             $value = substr($value, 1, -1);
         }
-        if (getenv($name) === false) {
-            putenv("{$name}={$value}");
-            $_ENV[$name] = $value;
-            $_SERVER[$name] = $value;
+
+        // Armazena de forma persistente nas superglobais
+        $_ENV[$name] = $value;
+        $_SERVER[$name] = $value;
+
+        // Se a função putenv estiver liberada no PHP, registra também nela com segurança
+        if (function_exists('putenv')) {
+            @putenv("{$name}={$value}");
         }
     }
 })();
@@ -44,7 +69,7 @@ require_once __DIR__ . '/constants.php';
  */
 
 // Ambiente: 'production' ou 'development'
-define('APP_ENV', getenv('APP_ENV') ?: 'production');
+define('APP_ENV', (string)env('APP_ENV', 'production'));
 define('APP_NAME', 'Sistema de Eleição dos Padrões COMARA');
 define('APP_OM', 'COMISSÃO DE AEROPORTOS DA REGIÃO AMAZÔNICA');
 define('APP_VERSION', '1.0.0');
@@ -53,20 +78,20 @@ define('APP_VERSION', '1.0.0');
 date_default_timezone_set('America/Belem');
 
 // Chave da Aplicação para hashes criptográficos e blind token signatures
-define('APP_KEY', getenv('APP_KEY') ?: 'COMARA_PADRAO_SECURE_KEY_2026_!@#$99');
+define('APP_KEY', (string)env('APP_KEY', 'COMARA_PADRAO_SECURE_KEY_2026_!@#$99'));
 
 // Configurações do Banco de Dados MySQL (aaPanel / Debian 13)
-define('DB_HOST', getenv('DB_HOST') ?: '127.0.0.1');
-define('DB_PORT', (int)(getenv('DB_PORT') ?: 3306));
-define('DB_NAME', getenv('DB_NAME') ?: 'comara_votacao');
-define('DB_USER', getenv('DB_USER') ?: 'root');
-define('DB_PASS', getenv('DB_PASS') ?: '');
+define('DB_HOST', (string)env('DB_HOST', '127.0.0.1'));
+define('DB_PORT', (int)env('DB_PORT', 3306));
+define('DB_NAME', (string)env('DB_NAME', 'comara_votacao'));
+define('DB_USER', (string)env('DB_USER', 'root'));
+define('DB_PASS', (string)env('DB_PASS', ''));
 define('DB_CHARSET', 'utf8mb4');
 
 // Configurações da API SIGPES CCARJ (Fotografias e Dados do Efetivo)
 // Em produção na INTRAER: http://api.servicos.ccarj.intraer/sigpesApi
 // Em homologação: http://api.servicos.homolog.ccarj.intraer/sigpesApi
-define('SIGPES_API_BASE', getenv('SIGPES_API_BASE') ?: 'http://api.servicos.homolog.ccarj.intraer/sigpesApi');
+define('SIGPES_API_BASE', (string)env('SIGPES_API_BASE', 'http://api.servicos.homolog.ccarj.intraer/sigpesApi'));
 define('SIGPES_API_TIMEOUT', 6); // Segundos de timeout para não travar telas
 define('SIGPES_ENABLE_CACHE', true);
 
