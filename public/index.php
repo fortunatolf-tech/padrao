@@ -52,6 +52,12 @@ switch ($rota) {
     case 'fase1/tacf':
         (new Fase1Controller())->salvarTacf();
         break;
+    case 'fase1/delegar':
+        (new Fase1Controller())->salvarDelegacao();
+        break;
+    case 'fase1/remover_delegacao':
+        (new Fase1Controller())->removerDelegacao();
+        break;
 
     // Fase 2: Seleção Chefias Divisão e Assessoria
     case 'fase2':
@@ -108,6 +114,9 @@ switch ($rota) {
         break;
     case 'admin/avancar_fase':
         (new AdminController())->avancarFase();
+        break;
+    case 'admin/voltar_fase':
+        (new AdminController())->voltarFase();
         break;
     case 'admin/reiniciar_pleito':
         (new AdminController())->reiniciarPleito();

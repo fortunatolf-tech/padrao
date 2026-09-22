@@ -135,21 +135,31 @@ O processo seletivo desenvolve-se obrigatoriamente através de cinco fases suces
 6. Clique em **"Gravar Avaliação do Candidato"**.
 7. O sistema calculará a Média dos Atributos e atualizará o status do militar de *"Pendente"* para *"Avaliado"*.
 
+#### 6.2.1. Do Chefe Imediato em Missão / Delegação de Avaliação:
+1. Caso o Oficial chefe direto encontre-se em missão operacional, destacamento em obras, férias regulamentares ou afastamento institucional durante a vigência da Fase 1:
+   - O próprio chefe direto (ou o Administrador do Sistema) poderá clicar no botão **"Em Missão? Delegar"** ao lado do militar subordinado.
+   - No modal interativo, selecione o **Oficial Substituto Designado** e registre o **motivo da delegação** (ex.: *"Chefe imediato em missão destacada na obra de Iauaretê-AM"*).
+   - O Oficial substituto passará a visualizar o militar imediatamente em sua lista de avaliações compulsórias na Fase 1, acompanhado da menção *"Delegado por [Chefe Titular]"*.
+2. **Resolução Automática de Pendências:**
+   - Assim que o Oficial delegado concluir e salvar a avaliação do militar, **o subordinado é automaticamente baixado da listagem de pendências regimentais do pleito**, desimpedindo a continuidade do processo eleitoral.
+   - Caso o chefe titular retorne antes da avaliação, a delegação poderá ser cancelada a qualquer instante com 1 clique no botão *"Cancelar Delegação"*.
+
 ---
 
-### 6.3. DO RESPONSÁVEL PELO TACF / COMISSÃO DE EDUCAÇÃO FÍSICA (`ED_FISICA`)
+### 6.3. DA COMISSÃO DE AVALIAÇÃO DO TACF / EDUCAÇÃO FÍSICA (`ED_FISICA`)
 
-**Público-alvo:** Oficial ou Graduado de Educação Física designado pela Portaria do Chefe da COMARA.
+**Público-alvo:** Oficiais e Graduados de Educação Física cadastrados na Comissão pelo Administrador Geral da OM.
 
 #### Procedimentos na Fase 1:
-1. Acesse o menu **"Fase 1: Lançamento de TACF"**.
-2. A tela exibe a relação de todos os militares concorrentes das categorias Graduado e Praça.
-3. Ao lado do nome de cada militar, clique no botão **"Lançar TACF"**.
-4. No modal:
-   - Insira a nota obtida pelo militar no último Teste de Aptidão e Condicionamento Físico oficial (de **0,00 a 10,00**).
+1. **Atribuição Múltipla de Avaliadores:** O Administrador Geral pode cadastrar múltiplos militares na Comissão de TACF (`ED_FISICA`), permitindo divisão equitativa de trabalho e registro simultâneo de notas.
+2. Acesse o menu **"Fase 1: Módulo Exclusivo TACF"**.
+3. A tela exibe a relação de todos os militares concorrentes das categorias Graduado e Praça.
+4. Ao lado do nome de cada militar, clique no botão **"Lançar TACF"**.
+5. No modal:
+   - Insira a nota obtida pelo militar no último Teste de Aptidão e Condicionamento Físico oficial (de **1,00 a 5,00**).
    - Informe a data de realização e observações complementares, se houver.
-   - Clique em **"Salvar Nota do TACF"**.
-5. O sistema recalcula automaticamente a **Média Ponderada Oficial da Fase 1**:
+   - Clique em **"Gravar Nota TACF"**.
+6. O sistema recalcula automaticamente a **Média Ponderada Oficial da Fase 1**:
    $$\text{Média Geral} = \frac{(\text{Média dos Atributos} \times 0{,}7) + (\text{Nota do TACF} \times 0{,}3)}{1{,}0}$$
    *(Para servidores civis, a Média Geral é composta exclusivamente pelos quesitos administrativos).*
 
@@ -227,9 +237,11 @@ O processo seletivo desenvolve-se obrigatoriamente através de cinco fases suces
 **Público-alvo:** Oficiais ou Graduados de TI designados para a administração mestre da plataforma eletrônica.
 
 #### Procedimentos Gerais de Gestão:
-1. **Gerenciamento do Pleito (`admin/pleito`):**
+1. **Gerenciamento do Pleito e Transições de Fase (`admin/pleito`):**
    - Cria o pleito do ano corrente (ex.: *"Eleição dos Padrões COMARA 2026"*).
-   - Abre e fecha as fases do processo conforme cronograma oficial publicado em Boletim.
+   - **Avanço Regimental de Fases:** Permite avançar as fases do processo. Na Fase 1, caso existam avaliações pendentes, o sistema exige do Administrador o **registro formal obrigatório de justificativa em texto** (gravada perenemente na tabela e no painel de auditoria de fases).
+   - **Retorno de Fase (Reversão):** Caso haja necessidade de correções administrativas ou reavaliações, o Administrador pode **retornar o pleito para a fase anterior** a qualquer momento com registro de motivo.
+   - **Histórico e Auditoria Perene de Fases:** Acompanhamento em tempo real de todas as transições realizadas (data, hora, avanço/retorno, pendências e responsável).
    - **Botão "Reiniciar Pleito":** Utilizado estritamente em caso de anulação formal autorizada pelo Chefe da COMARA. Exige dupla confirmação e registro detalhado da motivação administrativa.
 
 2. **Gerenciamento do Efetivo (`admin/efetivo`):**
@@ -241,14 +253,17 @@ O processo seletivo desenvolve-se obrigatoriamente através de cinco fases suces
 3. **Gerenciamento de Chefias e Administradores (`admin/chefias`):**
    - Aba 1: Vincula os Chefes de Divisão e Chefes de Assessoria responsáveis pela Fase 2.
    - Aba 2: **Administradores do Sistema** — Permite conceder privilégios de Administrador (`ADMIN`) a outros militares/civis da OM ou revogá-los com 1 clique (mantendo sempre protegida a conta master `admin`).
-   - Aba 3: Atribui o responsável técnico pelo lançamento de TACF (Comissão de Educação Física).
+   - Aba 3: **Comissão de Avaliadores do TACF (`ED_FISICA`)** — Permite cadastrar múltiplos avaliadores de educação física de forma colaborativa, bem como remover membros da comissão.
    - Aba 4: Vincula os Oficiais Superiores que compõem a Direção Superior na Fase 4.
 
-4. **Auditoria e Segurança (`admin/logs`):**
-   - Inspeciona os registros de auditoria inalteráveis com retenção mínima obrigatória de **5 anos**.
-   - Todos os acessos, alterações de senha, inabilitações, votos de minerva e transições de fase geram logs criptografados com IP, data, hora e matrícula do usuário.
+4. **Publicações Oficiais e Placa Alusiva (`relatorios/placa`):**
+   - A aba e visualização em alta definição da **Placa Alusiva Oficial do Hall do Prédio do Comando** é de prerrogativa **exclusiva do perfil Administrador (`ADMIN`)**, preservando o layout comemorativo oficial da Aeronáutica para impressão e confecção física.
 
-5. **Backups e Rotinas Preventivas (`admin/backups`):**
+5. **Auditoria e Segurança (`admin/logs`):**
+   - Inspeciona os registros de auditoria inalteráveis com retenção mínima obrigatória de **5 anos**.
+   - Todos os acessos, alterações de senha, inabilitações, votos de minerva, delegações de oficiais em missão e transições de fase geram logs criptografados com IP, data, hora e matrícula do usuário.
+
+6. **Backups e Rotinas Preventivas (`admin/backups`):**
    - Monitora os backups diários automáticos (executados às 23:00 via Cron).
    - Monitora os backups integrais semanais com espelho de banco de dados e repositório de fotografias.
 

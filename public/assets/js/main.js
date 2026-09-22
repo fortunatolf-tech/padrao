@@ -126,7 +126,33 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // 6. INICIALIZAÇÃO DE POPOVERS E TOOLTIPS (BOOTSTRAP 5)
+    // 6. MODAL DE DELEGAÇÃO DE OFICIAL EM MISSÃO (FASE 1)
+    const modalDelegar = document.getElementById('modalDelegarOficial');
+    if (modalDelegar) {
+        modalDelegar.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            if (!button) return;
+            const candId = button.getAttribute('data-candidato-id');
+            const candNome = button.getAttribute('data-candidato-nome');
+            const candSub = button.getAttribute('data-candidato-sub');
+            const motivo = button.getAttribute('data-delegacao-motivo') || '';
+            const delegadoId = button.getAttribute('data-delegado-id') || '';
+
+            const elId = document.getElementById('delegar_candidato_id');
+            const elNome = document.getElementById('delegar_candidato_nome');
+            const elSub = document.getElementById('delegar_candidato_sub');
+            const elMotivo = document.getElementById('delegar_motivo');
+            const elOficial = document.getElementById('delegar_oficial_id');
+
+            if (elId) elId.value = candId || '';
+            if (elNome) elNome.textContent = candNome || '--';
+            if (elSub) elSub.textContent = candSub || '';
+            if (elMotivo) elMotivo.value = motivo;
+            if (elOficial) elOficial.value = delegadoId || '';
+        });
+    }
+
+    // 7. INICIALIZAÇÃO DE POPOVERS E TOOLTIPS (BOOTSTRAP 5)
     const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
     [...popoverTriggerList].forEach(el => {
         new bootstrap.Popover(el, {

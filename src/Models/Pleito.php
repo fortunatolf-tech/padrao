@@ -33,7 +33,8 @@ class Pleito {
 
     /**
      * Valida se a Fase 1 pode ser encerrada.
-     * Regra mandatória: Todos os oficiais chefes diretos DEVEM ter concluído as fichas de seus subordinados diretos.
+     * Regra regimental: Oficiais chefes diretos (ou oficiais delegados por motivo de missão)
+     * devem concluir as fichas de seus subordinados diretos.
      */
     public static function validarPendenciasFase1(int $pleitoId): array {
         $pdo = Database::getConnection();
@@ -41,9 +42,13 @@ class Pleito {
         // Militares que possuem chefe direto e que concorrem nas categorias (Graduado e Praça)
         $sql = "
             SELECT e.id, e.nome, e.nome_guerra, e.posto, e.setor, e.categoria,
-                   c.nome as chefe_nome, c.nome_guerra as chefe_guerra, c.posto as chefe_posto
+                   c.nome as chefe_nome, c.nome_guerra as chefe_guerra, c.posto as chefe_posto,
+                   del.id as delegacao_id, del.oficial_delegado_id, del.motivo as delegacao_motivo,
+                   del_of.posto as delegado_posto, del_of.nome_guerra as delegado_guerra
             FROM efetivo e
             INNER JOIN efetivo c ON c.id = e.chefe_direto_id
+            LEFT JOIN delegacoes_fase1 del ON del.candidato_id = e.id AND del.pleito_id = :p
+            LEFT JOIN efetivo del_of ON del_of.id = del.oficial_delegado_id
             LEFT JOIN fichas_indicacao f ON f.candidato_id = e.id AND f.pleito_id = :p AND f.tipo_avaliacao = 'OBRIGATORIA_CHEFE'
             WHERE e.ativo = 1 
               AND e.categoria IN ('graduado', 'praca')
@@ -56,16 +61,17 @@ class Pleito {
         $pendentes = $stmt->fetchAll();
 
         return [
-            'pode_avancar' => empty($pendentes),
+            'pode_avancar'    => empty($pendentes),
             'total_pendentes' => count($pendentes),
-            'pendencias' => $pendentes
+            'pendencias'      => $pendentes
         ];
     }
 
     /**
-     * Valida e avança o pleito para a fase seguinte com bloqueios regimentais
+     * Valida e avança o pleito para a fase seguinte.
+     * O Administrador tem autorização para avançar com pendências mediante justificativa textual obrigatória.
      */
-    public static function avancarFase(int $pleitoId, ?int $usuarioId = null): array {
+    public static function avancarFase(int $pleitoId, ?int $usuarioId = null, ?string $justificativa = null): array {
         $pleito = self::getPorId($pleitoId);
         if (!$pleito) {
             return ['sucesso' => false, 'mensagem' => 'Pleito não encontrado.'];
@@ -78,22 +84,28 @@ class Pleito {
             return ['sucesso' => false, 'mensagem' => 'O pleito já atingiu a fase final. Utilize a opção de Homologação.'];
         }
 
-        // BLOQUEIO DA FASE 1: Se houver avaliações obrigatórias pendentes pelos chefes diretos
+        $tevePendencias = false;
+        $totalPendencias = 0;
+        $pendenciasDetalhes = [];
+
+        // VERIFICAÇÃO REGIMENTAL DA FASE 1
         if ($faseAtual === FASE_1) {
             $verificacao = self::validarPendenciasFase1($pleitoId);
             if (!$verificacao['pode_avancar']) {
-                AuditoriaService::log('AVANCO_FASE_BLOQUEADO', [
-                    'pleito_id'       => $pleitoId,
-                    'fase_tentada'    => 2,
-                    'total_pendentes' => $verificacao['total_pendentes']
-                ], $usuarioId);
+                $tevePendencias = true;
+                $totalPendencias = (int)$verificacao['total_pendentes'];
+                $pendenciasDetalhes = $verificacao['pendencias'];
 
-                return [
-                    'sucesso'    => false,
-                    'bloqueado'  => true,
-                    'mensagem'   => "Bloqueio Regimental: Não é possível avançar para a Fase 2 enquanto houver avaliações obrigatórias de chefes diretos pendentes ({$verificacao['total_pendentes']} pendência(s)).",
-                    'pendencias' => $verificacao['pendencias']
-                ];
+                $justificativaLimpa = trim((string)$justificativa);
+                if (mb_strlen($justificativaLimpa) < 5) {
+                    return [
+                        'sucesso'             => false,
+                        'exige_justificativa' => true,
+                        'total_pendentes'     => $totalPendencias,
+                        'mensagem'            => "Existem {$totalPendencias} avaliação(ões) obrigatória(s) pendente(s). Para avançar mesmo assim, o Administrador deve registrar obrigatoriamente a justificativa em texto.",
+                        'pendencias'          => $pendenciasDetalhes
+                    ];
+                }
             }
         }
 
@@ -103,21 +115,141 @@ class Pleito {
         }
 
         $pdo = Database::getConnection();
-        $stmt = $pdo->prepare('UPDATE pleitos SET fase_atual = :fase WHERE id = :id');
-        $stmt->execute([':fase' => $proximaFase, ':id' => $pleitoId]);
+        $pdo->beginTransaction();
 
-        AuditoriaService::log('FASE_AVANCADA', [
-            'pleito_id' => $pleitoId,
-            'fase_de'   => $faseAtual,
-            'fase_para' => $proximaFase
-        ], $usuarioId);
+        try {
+            $stmt = $pdo->prepare('UPDATE pleitos SET fase_atual = :fase, status = "em_andamento" WHERE id = :id');
+            $stmt->execute([':fase' => $proximaFase, ':id' => $pleitoId]);
 
-        return [
-            'sucesso'  => true,
-            'fase'     => $proximaFase,
-            'mensagem' => "Pleito avançado com sucesso para a Fase {$proximaFase}: " . FASES_PROCESSO[$proximaFase]['nome']
-        ];
+            // Grava histórico de transições de fase
+            $stmtHist = $pdo->prepare('
+                INSERT INTO historico_fases_pleito (
+                    pleito_id, fase_de, fase_para, tipo_transicao, teve_pendencias, total_pendencias, justificativa, usuario_id
+                ) VALUES (
+                    :pleito_id, :fase_de, :fase_para, "AVANCO", :teve_pendencias, :total_pendencias, :justificativa, :usuario_id
+                )
+            ');
+            $stmtHist->execute([
+                ':pleito_id'        => $pleitoId,
+                ':fase_de'          => $faseAtual,
+                ':fase_para'        => $proximaFase,
+                ':teve_pendencias'  => $tevePendencias ? 1 : 0,
+                ':total_pendencias' => $totalPendencias,
+                ':justificativa'    => $justificativa ? trim($justificativa) : null,
+                ':usuario_id'       => $usuarioId
+            ]);
+
+            $pdo->commit();
+
+            AuditoriaService::log($tevePendencias ? 'FASE_AVANCADA_COM_PENDENCIAS' : 'FASE_AVANCADA', [
+                'pleito_id'        => $pleitoId,
+                'fase_de'          => $faseAtual,
+                'fase_para'        => $proximaFase,
+                'teve_pendencias'  => $tevePendencias,
+                'total_pendencias' => $totalPendencias,
+                'justificativa'    => $justificativa
+            ], $usuarioId);
+
+            $msg = "Pleito avançado com sucesso para a Fase {$proximaFase}: " . FASES_PROCESSO[$proximaFase]['nome'];
+            if ($tevePendencias) {
+                $msg .= " (Avançado com {$totalPendencias} pendência(s) com justificativa registrada no histórico).";
+            }
+
+            return [
+                'sucesso'  => true,
+                'fase'     => $proximaFase,
+                'mensagem' => $msg
+            ];
+
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            return ['sucesso' => false, 'mensagem' => 'Erro ao avançar fase: ' . $e->getMessage()];
+        }
     }
+
+    /**
+     * Regride o pleito para a fase anterior pelo Administrador
+     */
+    public static function voltarFase(int $pleitoId, ?int $usuarioId = null, ?string $motivo = null): array {
+        $pleito = self::getPorId($pleitoId);
+        if (!$pleito) {
+            return ['sucesso' => false, 'mensagem' => 'Pleito não encontrado.'];
+        }
+
+        $faseAtual = (int)$pleito['fase_atual'];
+        $faseAnterior = $faseAtual - 1;
+
+        if ($faseAnterior < 1) {
+            return ['sucesso' => false, 'mensagem' => 'O pleito já se encontra na Fase 1 (Avaliações Iniciais).'];
+        }
+
+        $pdo = Database::getConnection();
+        $pdo->beginTransaction();
+
+        try {
+            $stmt = $pdo->prepare('UPDATE pleitos SET fase_atual = :fase, status = "em_andamento" WHERE id = :id');
+            $stmt->execute([':fase' => $faseAnterior, ':id' => $pleitoId]);
+
+            // Grava no histórico de transições
+            $stmtHist = $pdo->prepare('
+                INSERT INTO historico_fases_pleito (
+                    pleito_id, fase_de, fase_para, tipo_transicao, teve_pendencias, total_pendencias, justificativa, usuario_id
+                ) VALUES (
+                    :pleito_id, :fase_de, :fase_para, "RETORNO", 0, 0, :justificativa, :usuario_id
+                )
+            ');
+            $stmtHist->execute([
+                ':pleito_id'     => $pleitoId,
+                ':fase_de'       => $faseAtual,
+                ':fase_para'     => $faseAnterior,
+                ':justificativa' => $motivo ? trim($motivo) : 'Retorno de fase executado pelo Administrador',
+                ':usuario_id'    => $usuarioId
+            ]);
+
+            $pdo->commit();
+
+            AuditoriaService::log('FASE_RETORNADA', [
+                'pleito_id' => $pleitoId,
+                'fase_de'   => $faseAtual,
+                'fase_para' => $faseAnterior,
+                'motivo'    => $motivo
+            ], $usuarioId);
+
+            return [
+                'sucesso'  => true,
+                'fase'     => $faseAnterior,
+                'mensagem' => "Pleito retornado com sucesso para a Fase {$faseAnterior}: " . FASES_PROCESSO[$faseAnterior]['nome']
+            ];
+
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            return ['sucesso' => false, 'mensagem' => 'Erro ao retornar fase: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Retorna o histórico de todas as transições de fases do pleito com dados de auditoria
+     */
+    public static function obterHistoricoFases(int $pleitoId): array {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare('
+            SELECT h.*, 
+                   u.login as usuario_login,
+                   COALESCE(ef.nome, u.login, "Administrador") as usuario_nome
+            FROM historico_fases_pleito h
+            LEFT JOIN usuarios u ON u.id = h.usuario_id
+            LEFT JOIN efetivo ef ON ef.id = u.efetivo_id
+            WHERE h.pleito_id = :p
+            ORDER BY h.created_at DESC
+        ');
+        $stmt->execute([':p' => $pleitoId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
 
     /**
      * Consolidação automática dos indicados da Fase 2 para as fases seguintes

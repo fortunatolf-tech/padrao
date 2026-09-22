@@ -252,4 +252,39 @@ CREATE TABLE IF NOT EXISTS `logs_auditoria` (
     INDEX `idx_auditoria_acao` (`acao`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 13. TABELA DE DELEGAÇÕES DE AVALIAÇÃO DA FASE 1 (OFICIAL EM MISSÃO)
+CREATE TABLE IF NOT EXISTS `delegacoes_fase1` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `pleito_id` INT NOT NULL,
+    `candidato_id` INT NOT NULL,
+    `oficial_delegado_id` INT NOT NULL,
+    `designado_por_id` INT NOT NULL,
+    `motivo` TEXT NOT NULL,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT `fk_deleg_pleito` FOREIGN KEY (`pleito_id`) REFERENCES `pleitos` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_deleg_cand` FOREIGN KEY (`candidato_id`) REFERENCES `efetivo` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_deleg_oficial` FOREIGN KEY (`oficial_delegado_id`) REFERENCES `efetivo` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_deleg_user` FOREIGN KEY (`designado_por_id`) REFERENCES `usuarios` (`id`),
+    UNIQUE KEY `uk_deleg_pleito_cand` (`pleito_id`, `candidato_id`),
+    INDEX `idx_deleg_oficial` (`pleito_id`, `oficial_delegado_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 14. HISTÓRICO DE TRANSIÇÕES DE FASES DO PLEITO COM AUDITORIA
+CREATE TABLE IF NOT EXISTS `historico_fases_pleito` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `pleito_id` INT NOT NULL,
+    `fase_de` INT NOT NULL,
+    `fase_para` INT NOT NULL,
+    `tipo_transicao` ENUM('AVANCO', 'RETORNO') NOT NULL DEFAULT 'AVANCO',
+    `teve_pendencias` TINYINT(1) NOT NULL DEFAULT 0,
+    `total_pendencias` INT NOT NULL DEFAULT 0,
+    `justificativa` TEXT NULL,
+    `usuario_id` INT NOT NULL,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT `fk_hist_pleito` FOREIGN KEY (`pleito_id`) REFERENCES `pleitos` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_hist_user` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`),
+    INDEX `idx_hist_pleito` (`pleito_id`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;
+

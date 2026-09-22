@@ -91,11 +91,13 @@ $rotaAtual = $_GET['r'] ?? 'dashboard';
                         </li>
                     <?php endif; ?>
 
-                    <li class="nav-item">
-                        <a class="nav-link <?= ($rotaAtual === 'relatorios/placa') ? 'active' : '' ?>" href="/index.php?r=relatorios/placa">
-                            <i class="bi bi-trophy me-1 text-warning"></i> Placa Alusiva
-                        </a>
-                    </li>
+                    <?php if (AuthManager::hasRole(PERFIL_ADMIN)): ?>
+                        <li class="nav-item">
+                            <a class="nav-link <?= ($rotaAtual === 'relatorios/placa') ? 'active' : '' ?>" href="/index.php?r=relatorios/placa">
+                                <i class="bi bi-trophy me-1 text-warning"></i> Placa Alusiva
+                            </a>
+                        </li>
+                    <?php endif; ?>
 
                     <?php if (AuthManager::hasRole(PERFIL_ADMIN)): ?>
                         <li class="nav-item dropdown">

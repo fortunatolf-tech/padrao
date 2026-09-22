@@ -511,6 +511,70 @@ LOCK TABLES `voto_minerva_presidente` WRITE;
 /*!40000 ALTER TABLE `voto_minerva_presidente` DISABLE KEYS */;
 /*!40000 ALTER TABLE `voto_minerva_presidente` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Table structure for table `delegacoes_fase1`
+--
+
+DROP TABLE IF EXISTS `delegacoes_fase1`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `delegacoes_fase1` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `pleito_id` int NOT NULL,
+  `candidato_id` int NOT NULL,
+  `oficial_delegado_id` int NOT NULL,
+  `designado_por_id` int NOT NULL,
+  `motivo` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_deleg_pleito_cand` (`pleito_id`,`candidato_id`),
+  KEY `fk_deleg_cand` (`candidato_id`),
+  KEY `fk_deleg_oficial` (`oficial_delegado_id`),
+  KEY `fk_deleg_user` (`designado_por_id`),
+  KEY `idx_deleg_oficial` (`pleito_id`,`oficial_delegado_id`),
+  CONSTRAINT `fk_deleg_cand` FOREIGN KEY (`candidato_id`) REFERENCES `efetivo` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_deleg_oficial` FOREIGN KEY (`oficial_delegado_id`) REFERENCES `efetivo` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_deleg_pleito` FOREIGN KEY (`pleito_id`) REFERENCES `pleitos` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_deleg_user` FOREIGN KEY (`designado_por_id`) REFERENCES `usuarios` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+LOCK TABLES `delegacoes_fase1` WRITE;
+/*!40000 ALTER TABLE `delegacoes_fase1` DISABLE KEYS */;
+/*!40000 ALTER TABLE `delegacoes_fase1` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `historico_fases_pleito`
+--
+
+DROP TABLE IF EXISTS `historico_fases_pleito`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `historico_fases_pleito` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `pleito_id` int NOT NULL,
+  `fase_de` int NOT NULL,
+  `fase_para` int NOT NULL,
+  `tipo_transicao` enum('AVANCO','RETORNO') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'AVANCO',
+  `teve_pendencias` tinyint(1) NOT NULL DEFAULT '0',
+  `total_pendencias` int NOT NULL DEFAULT '0',
+  `justificativa` text COLLATE utf8mb4_unicode_ci,
+  `usuario_id` int NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `fk_hist_user` (`usuario_id`),
+  KEY `idx_hist_pleito` (`pleito_id`,`created_at`),
+  CONSTRAINT `fk_hist_pleito` FOREIGN KEY (`pleito_id`) REFERENCES `pleitos` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_hist_user` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+LOCK TABLES `historico_fases_pleito` WRITE;
+/*!40000 ALTER TABLE `historico_fases_pleito` DISABLE KEYS */;
+/*!40000 ALTER TABLE `historico_fases_pleito` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

@@ -64,6 +64,7 @@ class AdminController {
         }
 
         $verificacaoFase1 = Pleito::validarPendenciasFase1((int)$pleito['id']);
+        $historicoFases = Pleito::obterHistoricoFases((int)$pleito['id']);
 
         require_once ROOT_PATH . '/views/admin/pleito.php';
     }
@@ -82,7 +83,41 @@ class AdminController {
                 exit;
             }
 
-            $res = Pleito::avancarFase((int)$pleito['id'], (int)$user['id']);
+            $justificativa = trim((string)($_POST['justificativa_pendencias'] ?? ''));
+            $res = Pleito::avancarFase((int)$pleito['id'], (int)$user['id'], $justificativa !== '' ? $justificativa : null);
+            if ($res['sucesso']) {
+                flash_message('sucesso', $res['mensagem'], 'success');
+            } else {
+                flash_message('erro', $res['mensagem'], 'danger');
+            }
+        }
+
+        header('Location: /index.php?r=admin/pleito');
+        exit;
+    }
+
+    public function voltarFase(): void {
+        AuthMiddleware::handle();
+        RoleMiddleware::handle(PERFIL_ADMIN);
+
+        $pleito = Pleito::getAtivo();
+        $user = AuthManager::user();
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
+                flash_message('erro', 'Token CSRF inválido.', 'danger');
+                header('Location: /index.php?r=admin/pleito');
+                exit;
+            }
+
+            if (!$pleito) {
+                flash_message('erro', 'Nenhum pleito ativo.', 'danger');
+                header('Location: /index.php?r=admin/pleito');
+                exit;
+            }
+
+            $motivo = trim((string)($_POST['motivo_retorno'] ?? ''));
+            $res = Pleito::voltarFase((int)$pleito['id'], (int)$user['id'], $motivo !== '' ? $motivo : null);
             if ($res['sucesso']) {
                 flash_message('sucesso', $res['mensagem'], 'success');
             } else {
@@ -662,14 +697,15 @@ class AdminController {
         // 2. Oficiais e Chefes elegíveis para seleção
         $oficiais = Efetivo::listarOficiaisEChefes();
 
-        // 3. Avaliador TACF atual (perfil ED_FISICA)
-        $avaliadorTacf = $pdo->query('
-            SELECT u.id as usuario_id, e.*
+        // 3. Avaliadores TACF atuais (perfil ED_FISICA) - Comissão de Educação Física
+        $avaliadoresTacf = $pdo->query('
+            SELECT u.id as usuario_id, u.login, u.ativo as usuario_ativo, e.*
             FROM usuarios u
             INNER JOIN efetivo e ON e.id = u.efetivo_id
-            WHERE u.perfil = "ED_FISICA"
-            LIMIT 1
-        ')->fetch();
+            WHERE u.perfil = "ED_FISICA" AND u.ativo = 1
+            ORDER BY e.posto, e.nome
+        ')->fetchAll();
+        $avaliadorTacf = $avaliadoresTacf[0] ?? null;
 
         // 4. Membros da Direção Superior (Fase 4)
         $direcaoSuperior = $pdo->query('
@@ -784,24 +820,76 @@ class AdminController {
                 AuditoriaService::log('CHEFIAS_DIVISAO_ATUALIZADAS', ['qtd' => count($chefias)]);
                 flash_message('sucesso', 'Chefias de Divisão e Assessoria atualizadas com sucesso!', 'success');
 
+            } elseif ($secao === 'tacf_adicionar') {
+                $efetivoId = (int)($_POST['tacf_efetivo_id'] ?? 0);
+                if ($efetivoId > 0) {
+                    $militar = Efetivo::getPorId($efetivoId);
+                    if ($militar) {
+                        $stmtU = $pdo->prepare('SELECT id FROM usuarios WHERE efetivo_id = :ef LIMIT 1');
+                        $stmtU->execute([':ef' => $efetivoId]);
+                        $userId = $stmtU->fetchColumn();
+
+                        if ($userId) {
+                            $pdo->prepare('UPDATE usuarios SET perfil = "ED_FISICA", ativo = 1 WHERE id = :u')->execute([':u' => $userId]);
+                        } else {
+                            $login = $militar['saram'] ?: preg_replace('/\D/', '', (string)$militar['cpf']);
+                            $hashPadrao = password_hash('padrao@2026', PASSWORD_BCRYPT);
+                            $pdo->prepare('INSERT INTO usuarios (login, senha_hash, efetivo_id, perfil, ativo) VALUES (:l, :s, :ef, "ED_FISICA", 1)')
+                                ->execute([':l' => $login, ':s' => $hashPadrao, ':ef' => $efetivoId]);
+                            $userId = (int)$pdo->lastInsertId();
+                        }
+
+                        AuditoriaService::log('AVALIADOR_TACF_ADICIONADO', [
+                            'efetivo_id'    => $efetivoId,
+                            'usuario_id'    => $userId,
+                            'atribuido_por' => AuthManager::user()['id']
+                        ]);
+                        $nome = (!empty($militar['posto']) ? $militar['posto'] . ' ' : '') . ($militar['nome_guerra'] ?: $militar['nome']);
+                        flash_message('sucesso', "Avaliador do TACF adicionado com sucesso: {$nome}!", 'success');
+                    }
+                }
+
+            } elseif ($secao === 'tacf_remover') {
+                $removerUserId = (int)($_POST['usuario_id'] ?? 0);
+                if ($removerUserId > 0) {
+                    $stmtU = $pdo->prepare('SELECT id, login, efetivo_id FROM usuarios WHERE id = :u AND perfil = "ED_FISICA" LIMIT 1');
+                    $stmtU->execute([':u' => $removerUserId]);
+                    $usr = $stmtU->fetch();
+
+                    if ($usr) {
+                        $pdo->prepare('UPDATE usuarios SET perfil = "ELEITOR" WHERE id = :u')->execute([':u' => $removerUserId]);
+                        AuditoriaService::log('AVALIADOR_TACF_REMOVIDO', [
+                            'usuario_id'   => $removerUserId,
+                            'efetivo_id'   => $usr['efetivo_id'],
+                            'removido_por' => AuthManager::user()['id']
+                        ]);
+                        flash_message('sucesso', "Avaliador removido da comissão do TACF com sucesso!", 'success');
+                    }
+                }
+
             } elseif ($secao === 'tacf') {
                 $efetivoId = (int)($_POST['tacf_efetivo_id'] ?? 0);
                 if ($efetivoId > 0) {
-                    // Remove perfil ED_FISICA anterior
-                    $pdo->exec('UPDATE usuarios SET perfil = "ELEITOR" WHERE perfil = "ED_FISICA"');
+                    $militar = Efetivo::getPorId($efetivoId);
+                    if ($militar) {
+                        $stmtU = $pdo->prepare('SELECT id FROM usuarios WHERE efetivo_id = :ef LIMIT 1');
+                        $stmtU->execute([':ef' => $efetivoId]);
+                        $userId = $stmtU->fetchColumn();
 
-                    $stmtU = $pdo->prepare('SELECT id FROM usuarios WHERE efetivo_id = :ef LIMIT 1');
-                    $stmtU->execute([':ef' => $efetivoId]);
-                    $userId = $stmtU->fetchColumn();
+                        if ($userId) {
+                            $pdo->prepare('UPDATE usuarios SET perfil = "ED_FISICA", ativo = 1 WHERE id = :u')->execute([':u' => $userId]);
+                        } else {
+                            $login = $militar['saram'] ?: preg_replace('/\D/', '', (string)$militar['cpf']);
+                            $hashPadrao = password_hash('padrao@2026', PASSWORD_BCRYPT);
+                            $pdo->prepare('INSERT INTO usuarios (login, senha_hash, efetivo_id, perfil, ativo) VALUES (:l, :s, :ef, "ED_FISICA", 1)')
+                                ->execute([':l' => $login, ':s' => $hashPadrao, ':ef' => $efetivoId]);
+                            $userId = (int)$pdo->lastInsertId();
+                        }
 
-                    if ($userId) {
-                        $pdo->prepare('UPDATE usuarios SET perfil = "ED_FISICA" WHERE id = :u')->execute([':u' => $userId]);
+                        AuditoriaService::log('AVALIADOR_TACF_ATRIBUIDO', ['efetivo_id' => $efetivoId]);
+                        flash_message('sucesso', 'Responsável pelo TACF (Educação Física) atualizado com sucesso!', 'success');
                     }
-
-                    AuditoriaService::log('AVALIADOR_TACF_ATRIBUIDO', ['efetivo_id' => $efetivoId]);
-                    flash_message('sucesso', 'Responsável pelo TACF (Educação Física) atualizado com sucesso!', 'success');
                 }
-
             } elseif ($secao === 'direcao_superior') {
                 $membros = $_POST['membros_direcao'] ?? []; // array de efetivo_id
 

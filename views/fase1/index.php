@@ -87,6 +87,19 @@ require_once ROOT_PATH . '/views/layouts/header.php';
                                         <td>
                                             <strong><?= sanitize_output($sub['nome_guerra']) ?></strong><br>
                                             <small class="text-muted"><?= sanitize_output($sub['nome']) ?></small>
+                                            <?php if (!empty($sub['delegacao_id'])): ?>
+                                                <div class="mt-1">
+                                                    <?php if ((int)$sub['sou_o_delegado'] === 1): ?>
+                                                        <span class="badge bg-warning text-dark" title="Motivo: <?= sanitize_output($sub['delegacao_motivo']) ?>">
+                                                            <i class="bi bi-person-badge me-1"></i>Delegado por: <?= sanitize_output($sub['chefe_orig_posto'] . ' ' . $sub['chefe_orig_guerra']) ?>
+                                                        </span>
+                                                    <?php else: ?>
+                                                        <span class="badge bg-info text-dark" title="Motivo: <?= sanitize_output($sub['delegacao_motivo']) ?>">
+                                                            <i class="bi bi-person-fill-gear me-1"></i>Delegado ao: <?= sanitize_output($sub['delegado_posto'] . ' ' . $sub['delegado_guerra']) ?>
+                                                        </span>
+                                                    <?php endif; ?>
+                                                </div>
+                                            <?php endif; ?>
                                         </td>
                                         <td>
                                             <span class="badge bg-light text-dark border"><?= sanitize_output($sub['posto']) ?></span>
@@ -117,10 +130,31 @@ require_once ROOT_PATH . '/views/layouts/header.php';
                                                 <span class="text-danger small fw-semibold"><i class="bi bi-exclamation-circle"></i> Obrigatória</span>
                                             <?php endif; ?>
                                         </td>
-                                        <td class="text-end">
+                                        <td class="text-end text-nowrap">
                                             <a href="/index.php?r=fase1/avaliar&id=<?= $sub['id'] ?>" class="btn btn-sm <?= $sub['ficha_id'] ? 'btn-outline-primary' : 'btn-primary fw-bold' ?>">
                                                 <i class="bi bi-pencil-square me-1"></i> <?= $sub['ficha_id'] ? 'Editar Ficha' : 'Preencher Ficha' ?>
                                             </a>
+                                            <?php if (!$sub['ficha_id'] && (int)$sub['sou_o_delegado'] === 0): ?>
+                                                <button type="button" class="btn btn-sm btn-outline-warning ms-1"
+                                                        data-bs-toggle="modal" data-bs-target="#modalDelegarOficial"
+                                                        data-candidato-id="<?= $sub['id'] ?>"
+                                                        data-candidato-nome="<?= sanitize_output($sub['posto'] . ' ' . $sub['nome_guerra']) ?>"
+                                                        data-candidato-sub="<?= sanitize_output($sub['nome']) ?>"
+                                                        data-delegado-id="<?= $sub['oficial_delegado_id'] ?? '' ?>"
+                                                        data-delegacao-motivo="<?= sanitize_output($sub['delegacao_motivo'] ?? '') ?>"
+                                                        title="Indicar outro oficial avaliador por motivo de missão/afastamento">
+                                                    <i class="bi bi-person-fill-exclamation me-1"></i> <?= $sub['delegacao_id'] ? 'Alterar' : 'Em Missão?' ?>
+                                                </button>
+                                                <?php if ($sub['delegacao_id']): ?>
+                                                    <form method="POST" action="/index.php?r=fase1/remover_delegacao" class="d-inline" onsubmit="return confirm('Remover delegação de <?= addslashes(sanitize_output($sub['nome_guerra'])) ?> e reassumir a avaliação?');">
+                                                        <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                                                        <input type="hidden" name="candidato_id" value="<?= $sub['id'] ?>">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger ms-1" title="Cancelar delegação">
+                                                            <i class="bi bi-x-circle"></i>
+                                                        </button>
+                                                    </form>
+                                                <?php endif; ?>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -274,13 +308,17 @@ require_once ROOT_PATH . '/views/layouts/header.php';
                         </div>
 
                         <div class="table-responsive">
-                            <table class="table table-bordered table-sm">
+                            <table class="table table-bordered table-sm align-middle">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Chefe Direto Responsável</th>
+                                        <th>Chefe Direto Titular</th>
                                         <th>Militar Subordinado Pendente</th>
                                         <th>Posto / Categoria</th>
                                         <th>Setor</th>
+                                        <th>Situação de Delegação</th>
+                                        <?php if (AuthManager::hasRole(PERFIL_ADMIN)): ?>
+                                            <th class="text-end">Ação Administrativa</th>
+                                        <?php endif; ?>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -293,6 +331,36 @@ require_once ROOT_PATH . '/views/layouts/header.php';
                                             <td><?= sanitize_output($p['posto'] . ' ' . $p['nome_guerra']) ?> (<?= sanitize_output($p['nome']) ?>)</td>
                                             <td><?= sanitize_output($p['categoria']) ?></td>
                                             <td><?= sanitize_output($p['setor']) ?></td>
+                                            <td>
+                                                <?php if (!empty($p['delegacao_id'])): ?>
+                                                    <span class="badge bg-warning text-dark"><i class="bi bi-person-check-fill me-1"></i>Delegado ao: <?= sanitize_output($p['delegado_posto'] . ' ' . $p['delegado_guerra']) ?></span>
+                                                    <small class="text-muted d-block"><?= sanitize_output($p['delegacao_motivo']) ?></small>
+                                                <?php else: ?>
+                                                    <span class="badge bg-light text-muted border">Chefe Titular (Pendente)</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <?php if (AuthManager::hasRole(PERFIL_ADMIN)): ?>
+                                                <td class="text-end text-nowrap">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                                            data-bs-toggle="modal" data-bs-target="#modalDelegarOficial"
+                                                            data-candidato-id="<?= $p['id'] ?>"
+                                                            data-candidato-nome="<?= sanitize_output($p['posto'] . ' ' . $p['nome_guerra']) ?>"
+                                                            data-candidato-sub="<?= sanitize_output($p['nome']) ?>"
+                                                            data-delegado-id="<?= $p['oficial_delegado_id'] ?? '' ?>"
+                                                            data-delegacao-motivo="<?= sanitize_output($p['delegacao_motivo'] ?? '') ?>">
+                                                        <i class="bi bi-person-plus me-1"></i> <?= $p['delegacao_id'] ? 'Alterar Substituto' : 'Designar Substituto' ?>
+                                                    </button>
+                                                    <?php if ($p['delegacao_id']): ?>
+                                                        <form method="POST" action="/index.php?r=fase1/remover_delegacao" class="d-inline" onsubmit="return confirm('Remover delegação de <?= addslashes(sanitize_output($p['nome_guerra'])) ?>?');">
+                                                            <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                                                            <input type="hidden" name="candidato_id" value="<?= $p['id'] ?>">
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger ms-1" title="Cancelar delegação">
+                                                                <i class="bi bi-x-circle"></i>
+                                                            </button>
+                                                        </form>
+                                                    <?php endif; ?>
+                                                </td>
+                                            <?php endif; ?>
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>
@@ -348,5 +416,87 @@ require_once ROOT_PATH . '/views/layouts/header.php';
         </div>
     </div>
 </div>
+
+<!-- Modal de Delegação de Avaliação de Chefe em Missão -->
+<div class="modal fade" id="modalDelegarOficial" tabindex="-1" aria-labelledby="modalDelegarOficialLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
+            <form method="POST" action="/index.php?r=fase1/delegar">
+                <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                <input type="hidden" name="candidato_id" id="delegar_candidato_id">
+
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold" id="modalDelegarOficialLabel">
+                        <i class="bi bi-person-badge-fill me-2"></i> Indicar Oficial Substituto (Chefe em Missão)
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-info py-2 px-3 small mb-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Caso o chefe imediato esteja em missão ou afastado, outro Oficial pode ser designado para avaliar o militar. <strong>Assim que o oficial substituto registrar a avaliação, o militar sairá automaticamente da lista de pendências.</strong>
+                    </div>
+
+                    <div class="p-3 bg-light rounded border mb-3">
+                        <div class="text-muted small fw-semibold">Subordinado a ser avaliado:</div>
+                        <div class="fs-6 fw-bold text-dark" id="delegar_candidato_nome">--</div>
+                        <small class="text-muted" id="delegar_candidato_sub">--</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="delegar_oficial_id" class="form-label fw-bold text-dark small">Oficial Substituto Designado <span class="text-danger">*</span>:</label>
+                        <select name="oficial_delegado_id" id="delegar_oficial_id" class="form-select" required>
+                            <option value="">Selecione o Oficial...</option>
+                            <?php foreach ($oficiais as $of): ?>
+                                <option value="<?= $of['id'] ?>">
+                                    <?= sanitize_output($of['posto']) ?> <?= sanitize_output($of['nome_guerra']) ?> (<?= sanitize_output($of['setor'] ?: $of['divisao_sigla']) ?> - SARAM: <?= sanitize_output($of['saram']) ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <div class="form-text small">Apenas Oficiais da FAB podem realizar a avaliação na Fase 1.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="delegar_motivo" class="form-label fw-bold text-dark small">Motivo da Delegação / Afastamento <span class="text-danger">*</span>:</label>
+                        <textarea name="motivo" id="delegar_motivo" class="form-control" rows="3" placeholder="Ex: Chefe imediato em missão operacional na região Amazônica..." required minlength="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm fw-bold shadow-sm">
+                        <i class="bi bi-check-lg me-1"></i> Confirmar Delegação
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalDelegar = document.getElementById('modalDelegarOficial');
+    if (modalDelegar) {
+        modalDelegar.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            if (!button) return;
+            const candId = button.getAttribute('data-candidato-id');
+            const candNome = button.getAttribute('data-candidato-nome');
+            const candSub = button.getAttribute('data-candidato-sub');
+            const motivo = button.getAttribute('data-delegacao-motivo') || '';
+            const delegadoId = button.getAttribute('data-delegado-id') || '';
+
+            document.getElementById('delegar_candidato_id').value = candId || '';
+            document.getElementById('delegar_candidato_nome').textContent = candNome || '--';
+            document.getElementById('delegar_candidato_sub').textContent = candSub || '';
+            document.getElementById('delegar_motivo').value = motivo;
+            if (delegadoId) {
+                document.getElementById('delegar_oficial_id').value = delegadoId;
+            } else {
+                document.getElementById('delegar_oficial_id').value = '';
+            }
+        });
+    }
+});
+</script>
 
 <?php require_once ROOT_PATH . '/views/layouts/footer.php'; ?>

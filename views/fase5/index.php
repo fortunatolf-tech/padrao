@@ -255,9 +255,11 @@ $dadosHomol = $apuracao['dados_homologacao'];
         <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
             <span class="small text-muted fw-bold">Documentos e Publicações Oficiais:</span>
             <div class="d-flex gap-2">
-                <a href="/index.php?r=relatorios/placa" class="btn btn-warning fw-bold text-dark shadow-sm">
-                    <i class="bi bi-trophy-fill me-1"></i> Placa Alusiva (Hall do Comando)
-                </a>
+                <?php if (AuthManager::hasRole(PERFIL_ADMIN)): ?>
+                    <a href="/index.php?r=relatorios/placa" class="btn btn-warning fw-bold text-dark shadow-sm">
+                        <i class="bi bi-trophy-fill me-1"></i> Placa Alusiva (Hall do Comando)
+                    </a>
+                <?php endif; ?>
                 <a href="/index.php?r=relatorios/site" class="btn btn-primary fw-bold shadow-sm">
                     <i class="bi bi-globe me-1"></i> Publicação Web (Site COMARA)
                 </a>

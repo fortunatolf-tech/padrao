@@ -172,48 +172,82 @@ require_once ROOT_PATH . '/views/layouts/header.php';
             <!-- Responsável TACF (Educação Física) -->
             <div class="col-md-6">
                 <div class="card card-comara shadow-sm h-100">
-                    <div class="card-comara-header">
-                        <i class="bi bi-heart-pulse-fill me-2 text-danger"></i> Responsável pelo TACF (Educação Física)
+                    <div class="card-comara-header d-flex justify-content-between align-items-center">
+                        <div><i class="bi bi-heart-pulse-fill me-2 text-danger"></i> Comissão de Avaliação do TACF</div>
+                        <span class="badge bg-danger"><?= count($avaliadoresTacf) ?> Avaliador(es)</span>
                     </div>
                     <div class="card-body p-4">
                         <p class="text-muted small">
-                            O usuário com perfil <strong>ED_FISICA</strong> tem permissão exclusiva para lançar e homologar as notas do Teste de Aptidão e Condicionamento Físico de todos os graduados e praças na Fase 1.
+                            Os militares/civis cadastrados abaixo com perfil <strong>ED_FISICA</strong> possuem permissão para lançar e homologar as notas do Teste de Aptidão e Condicionamento Físico de todos os militares na Fase 1.
                         </p>
 
-                        <div class="p-3 bg-light rounded border mb-3">
-                            <div class="text-muted small fw-semibold mb-1">Avaliador Atual:</div>
-                            <?php if ($avaliadorTacf): ?>
-                                <div class="d-flex align-items-center">
-                                    <img src="/index.php?r=foto&saram=<?= $avaliadorTacf['saram'] ?>&id=<?= $avaliadorTacf['id'] ?>" class="rounded-circle me-3" style="width: 48px; height: 48px; object-fit: cover;" alt="Foto">
-                                    <div>
-                                        <div class="fw-bold fs-6 text-dark"><?= sanitize_output($avaliadorTacf['posto']) ?> <?= sanitize_output($avaliadorTacf['nome_guerra']) ?></div>
-                                        <small class="text-muted"><?= sanitize_output($avaliadorTacf['nome']) ?> • SARAM: <?= sanitize_output($avaliadorTacf['saram']) ?></small>
-                                    </div>
-                                </div>
-                            <?php else: ?>
-                                <span class="text-danger fw-bold"><i class="bi bi-exclamation-triangle me-1"></i> Nenhum avaliador de TACF definido</span>
-                            <?php endif; ?>
+                        <div class="table-responsive mb-3" style="max-height: 240px; overflow-y: auto;">
+                            <table class="table table-sm table-hover align-middle border mb-0">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th>Militar / Membro</th>
+                                        <th>SARAM</th>
+                                        <th class="text-end">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if (empty($avaliadoresTacf)): ?>
+                                        <tr>
+                                            <td colspan="3" class="text-center text-danger py-3">
+                                                <i class="bi bi-exclamation-triangle me-1"></i> Nenhum avaliador de TACF cadastrado.
+                                            </td>
+                                        </tr>
+                                    <?php else: ?>
+                                        <?php foreach ($avaliadoresTacf as $av): ?>
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <img src="/index.php?r=foto&saram=<?= $av['saram'] ?>&id=<?= $av['id'] ?>" class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;" alt="Foto">
+                                                        <div>
+                                                            <strong class="d-block text-dark"><?= sanitize_output($av['posto']) ?> <?= sanitize_output($av['nome_guerra']) ?></strong>
+                                                            <small class="text-muted"><?= sanitize_output($av['setor'] ?: $av['divisao_sigla']) ?></small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td><span class="badge bg-light text-dark border"><?= sanitize_output($av['saram']) ?></span></td>
+                                                <td class="text-end">
+                                                    <form method="POST" action="/index.php?r=admin/salvar_chefias" class="d-inline" onsubmit="return confirm('Remover <?= sanitize_output($av['nome_guerra']) ?> da Comissão de Avaliadores do TACF?');">
+                                                        <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                                                        <input type="hidden" name="secao" value="tacf_remover">
+                                                        <input type="hidden" name="usuario_id" value="<?= $av['usuario_id'] ?>">
+                                                        <button type="submit" class="btn btn-outline-danger btn-sm" title="Remover da comissão">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
                         </div>
 
-                        <form method="POST" action="/index.php?r=admin/salvar_chefias">
+                        <!-- Formulário para Adicionar Novo Avaliador do TACF -->
+                        <form method="POST" action="/index.php?r=admin/salvar_chefias" class="p-3 bg-light rounded border">
                             <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
-                            <input type="hidden" name="secao" value="tacf">
+                            <input type="hidden" name="secao" value="tacf_adicionar">
 
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Selecionar Novo Responsável pelo TACF:</label>
-                                <select name="tacf_efetivo_id" class="form-select" required>
-                                    <option value="">Selecione o militar...</option>
-                                    <?php foreach ($oficiais as $of): ?>
-                                        <option value="<?= $of['id'] ?>" <?= ($avaliadorTacf && $avaliadorTacf['id'] == $of['id']) ? 'selected' : '' ?>>
-                                            <?= sanitize_output($of['posto']) ?> <?= sanitize_output($of['nome_guerra']) ?> (<?= sanitize_output($of['setor']) ?> - SARAM: <?= sanitize_output($of['saram']) ?>)
+                            <label class="form-label fw-semibold small mb-1">
+                                <i class="bi bi-person-plus me-1 text-primary"></i> Cadastrar Novo Avaliador para o TACF:
+                            </label>
+                            <div class="input-group">
+                                <select name="tacf_efetivo_id" class="form-select select2-enable" required>
+                                    <option value="">Selecione o militar/avaliador...</option>
+                                    <?php foreach ($todoEfetivo as $m): ?>
+                                        <option value="<?= $m['id'] ?>">
+                                            <?= sanitize_output($m['posto']) ?> <?= sanitize_output($m['nome_guerra']) ?> (<?= sanitize_output($m['setor'] ?: $m['divisao_sigla']) ?> - SARAM: <?= sanitize_output($m['saram']) ?>)
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
+                                <button type="submit" class="btn btn-success fw-bold">
+                                    <i class="bi bi-plus-lg me-1"></i> Adicionar
+                                </button>
                             </div>
-
-                            <button type="submit" class="btn btn-primary fw-bold w-100">
-                                <i class="bi bi-save me-1"></i> Atualizar Responsável TACF
-                            </button>
                         </form>
                     </div>
                 </div>

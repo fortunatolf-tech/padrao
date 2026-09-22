@@ -97,34 +97,46 @@ require_once ROOT_PATH . '/views/layouts/header.php';
 
                 <?php if ((int)$pleito['fase_atual'] === FASE_1): ?>
                     <div class="text-start mb-3">
-                        <label class="small text-muted fw-bold d-block mb-1">Verificação Prévia de Bloqueio:</label>
+                        <label class="small text-muted fw-bold d-block mb-1">Verificação Prévia de Avaliações:</label>
                         <?php if ($verificacaoFase1['pode_avancar']): ?>
                             <div class="badge bg-success p-2 d-block text-start">
                                 <i class="bi bi-check-circle-fill me-1"></i> 100% das avaliações obrigatórias concluídas.
                             </div>
                         <?php else: ?>
-                            <div class="badge bg-danger p-2 d-block text-start">
-                                <i class="bi bi-exclamation-triangle-fill me-1"></i> <?= $verificacaoFase1['total_pendentes'] ?> avaliação(ões) pendente(s) de chefes diretos!
+                            <div class="badge bg-warning text-dark p-2 d-block text-start">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i> <?= $verificacaoFase1['total_pendentes'] ?> avaliação(ões) pendente(s) de chefes diretos.
                             </div>
-                            <small class="text-danger d-block mt-1">O avanço será rejeitado pelo motor de regras enquanto houver pendências.</small>
+                            <small class="text-muted d-block mt-1">O avanço com pendências exigirá o registro formal de justificativa.</small>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
 
                 <?php if ((int)$pleito['fase_atual'] < 5): ?>
-                    <form method="POST" action="/index.php?r=admin/avancar_fase" onsubmit="return confirm('Confirma o avanço oficial do pleito para a próxima fase regimental?');">
-                        <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
-                        <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold shadow-sm">
-                            <i class="bi bi-arrow-right-circle-fill me-1"></i> Avançar para a Fase <?= (int)$pleito['fase_atual'] + 1 ?>
+                    <?php if ((int)$pleito['fase_atual'] === FASE_1 && !$verificacaoFase1['pode_avancar']): ?>
+                        <button type="button" class="btn btn-warning btn-lg w-100 fw-bold shadow-sm mb-2" data-bs-toggle="modal" data-bs-target="#modalAvancarComPendencias">
+                            <i class="bi bi-arrow-right-circle-fill me-1"></i> Avançar para Fase 2 (com Justificativa)
                         </button>
-                    </form>
+                    <?php else: ?>
+                        <form method="POST" action="/index.php?r=admin/avancar_fase" onsubmit="return confirm('Confirma o avanço oficial do pleito para a próxima fase regimental?');">
+                            <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                            <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold shadow-sm mb-2">
+                                <i class="bi bi-arrow-right-circle-fill me-1"></i> Avançar para a Fase <?= (int)$pleito['fase_atual'] + 1 ?>
+                            </button>
+                        </form>
+                    <?php endif; ?>
                 <?php else: ?>
-                    <div class="alert alert-info small mb-0">
+                    <div class="alert alert-info small mb-2">
                         O pleito está na Fase 5. Utilize o painel de Homologação para a proclamação oficial definitiva dos vencedores.
                     </div>
                 <?php endif; ?>
 
-                <div class="mt-3 pt-3 border-top">
+                <?php if ((int)$pleito['fase_atual'] > 1): ?>
+                    <button type="button" class="btn btn-outline-warning w-100 fw-bold shadow-sm mb-2" data-bs-toggle="modal" data-bs-target="#modalVoltarFase">
+                        <i class="bi bi-arrow-left-circle me-1"></i> Voltar para a Fase <?= (int)$pleito['fase_atual'] - 1 ?>
+                    </button>
+                <?php endif; ?>
+
+                <div class="mt-2 pt-2 border-top">
                     <button type="button" class="btn btn-outline-danger w-100 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalReiniciarPleito">
                         <i class="bi bi-arrow-counterclockwise me-1"></i> Reiniciar Pleito
                     </button>
@@ -149,6 +161,82 @@ require_once ROOT_PATH . '/views/layouts/header.php';
         </div>
     </div>
 </div>
+
+<!-- Histórico e Auditoria de Transições de Fases -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card card-comara shadow-sm">
+            <div class="card-comara-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-journal-text me-2 text-primary"></i>Histórico e Auditoria de Transições de Fases</span>
+                <span class="badge bg-secondary"><?= count($historicoFases ?? []) ?> Registro(s)</span>
+            </div>
+            <div class="card-body p-0">
+                <?php if (empty($historicoFases)): ?>
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-info-circle fs-3 d-block mb-2 text-secondary"></i>
+                        Nenhuma transição de fase registrada para o pleito atual até o momento.
+                    </div>
+                <?php else: ?>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Data / Horário</th>
+                                    <th>Transição</th>
+                                    <th>Etapa (De &rarr; Para)</th>
+                                    <th>Pendências no Avanço</th>
+                                    <th>Justificativa / Motivo Registrado</th>
+                                    <th>Administrador Responsável</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($historicoFases as $hf): ?>
+                                    <tr>
+                                        <td>
+                                            <i class="bi bi-clock me-1 text-muted"></i>
+                                            <?= date('d/m/Y H:i:s', strtotime($hf['created_at'])) ?>
+                                        </td>
+                                        <td>
+                                            <?php if ($hf['tipo_transicao'] === 'AVANCO'): ?>
+                                                <span class="badge bg-success"><i class="bi bi-arrow-right-circle me-1"></i> AVANÇO</span>
+                                            <?php else: ?>
+                                                <span class="badge bg-warning text-dark"><i class="bi bi-arrow-left-circle me-1"></i> RETORNO</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <strong>Fase <?= $hf['fase_de'] ?></strong>
+                                            <i class="bi bi-arrow-right mx-1 text-muted"></i>
+                                            <strong class="text-primary">Fase <?= $hf['fase_para'] ?></strong>
+                                        </td>
+                                        <td>
+                                            <?php if ((int)$hf['teve_pendencias'] === 1): ?>
+                                                <span class="badge bg-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i> <?= $hf['total_pendencias'] ?> Pendência(s)</span>
+                                            <?php else: ?>
+                                                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> Sem Pendências</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if (!empty($hf['justificativa'])): ?>
+                                                <span class="small fst-italic text-dark">"<?= sanitize_output($hf['justificativa']) ?>"</span>
+                                            <?php else: ?>
+                                                <span class="small text-muted">-</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <span class="fw-semibold"><?= sanitize_output($hf['usuario_nome'] ?: 'Administrador') ?></span>
+                                            <small class="text-muted d-block">(<?= sanitize_output($hf['usuario_login'] ?: 'admin') ?>)</small>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <!-- Modal de Reinicialização do Pleito (Exclusivo Administrador) -->
 <div class="modal fade" id="modalReiniciarPleito" tabindex="-1" aria-labelledby="modalReiniciarPleitoLabel" aria-hidden="true">
@@ -218,6 +306,95 @@ require_once ROOT_PATH . '/views/layouts/header.php';
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-danger btn-sm fw-bold shadow-sm">
                         <i class="bi bi-arrow-counterclockwise me-1"></i> Confirmar e Reiniciar Pleito
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Avanço com Pendências (Justificativa Obrigatória) -->
+<div class="modal fade" id="modalAvancarComPendencias" tabindex="-1" aria-labelledby="modalAvancarComPendenciasLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title fw-bold" id="modalAvancarComPendenciasLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-2 text-danger"></i> Avançar com Pendências Regimentais
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form method="POST" action="/index.php?r=admin/avancar_fase">
+                <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                <div class="modal-body p-4">
+                    <div class="alert alert-danger py-2 px-3 small mb-3">
+                        <i class="bi bi-shield-exclamation me-1"></i>
+                        Existem <strong><?= $verificacaoFase1['total_pendentes'] ?? 0 ?> avaliação(ões) pendente(s)</strong> de chefes diretos na Fase 1.
+                    </div>
+
+                    <p class="text-muted small">
+                        Como <strong>Administrador Geral</strong>, você possui autorização para avançar para a próxima fase mesmo havendo pendências. No entanto, o sistema exige que seja registrada uma <strong>justificativa formal em texto</strong>, que ficará gravada perenemente na auditoria oficial do pleito.
+                    </p>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small">Justificativa Formal do Administrador <span class="text-danger">*</span>:</label>
+                        <textarea name="justificativa_pendencias" class="form-control" rows="4" placeholder="Ex: Avanço determinado em virtude do término do prazo e autorização do Comando..." required minlength="5"></textarea>
+                        <div class="form-text small">Mínimo de 5 caracteres. Este texto será auditado e exibido no histórico de fases.</div>
+                    </div>
+
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" id="confirma_avanco_pendencia" required>
+                        <label class="form-check-label small fw-semibold text-dark" for="confirma_avanco_pendencia">
+                            Estou ciente de que esta ação e justificativa ficarão registradas sob meu usuário.
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning btn-sm fw-bold shadow-sm">
+                        <i class="bi bi-arrow-right-circle-fill me-1"></i> Confirmar Avanço com Justificativa
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Retorno de Fase -->
+<div class="modal fade" id="modalVoltarFase" tabindex="-1" aria-labelledby="modalVoltarFaseLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title fw-bold" id="modalVoltarFaseLabel">
+                    <i class="bi bi-arrow-left-circle-fill me-2"></i> Retornar Etapa do Pleito
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form method="POST" action="/index.php?r=admin/voltar_fase">
+                <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                <div class="modal-body p-4">
+                    <div class="alert alert-warning py-2 px-3 small mb-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        O pleito regredirá da <strong>Fase <?= $pleito['fase_atual'] ?></strong> para a <strong>Fase <?= max(1, (int)$pleito['fase_atual'] - 1) ?> (<?= FASES_PROCESSO[max(1, (int)$pleito['fase_atual'] - 1)]['nome'] ?>)</strong>.
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small">Motivo do Retorno (Opcional / Justificativa):</label>
+                        <textarea name="motivo_retorno" class="form-control" rows="3" placeholder="Ex: Reabertura solicitada pelo Comando para inclusão de avaliações complementares..."></textarea>
+                    </div>
+
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" id="confirma_voltar_fase" required>
+                        <label class="form-check-label small fw-semibold text-dark" for="confirma_voltar_fase">
+                            Confirmo o retorno do pleito para a fase anterior.
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning btn-sm fw-bold shadow-sm">
+                        <i class="bi bi-arrow-left-circle me-1"></i> Confirmar Retorno de Fase
                     </button>
                 </div>
             </form>

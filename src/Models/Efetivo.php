@@ -27,23 +27,118 @@ class Efetivo {
 
     /**
      * Retorna os militares diretamente subordinados a um chefe direto
+     * ou militares cuja avaliação foi delegada a este oficial (caso de chefe em missão)
      */
     public static function getSubordinadosDiretos(int $chefeEfetivoId, int $pleitoId): array {
         $pdo = Database::getConnection();
         $sql = "
             SELECT e.*, 
                    f.id as ficha_id, f.media_calculada, f.updated_at as avaliado_em,
-                   t.nota_tacf
+                   t.nota_tacf,
+                   del.id as delegacao_id, del.oficial_delegado_id, del.motivo as delegacao_motivo,
+                   del_of.posto as delegado_posto, del_of.nome_guerra as delegado_guerra,
+                   orig_ch.posto as chefe_orig_posto, orig_ch.nome_guerra as chefe_orig_guerra,
+                   IF(del.oficial_delegado_id = :chefe, 1, 0) as sou_o_delegado
             FROM efetivo e
+            LEFT JOIN delegacoes_fase1 del ON del.candidato_id = e.id AND del.pleito_id = :p
+            LEFT JOIN efetivo del_of ON del_of.id = del.oficial_delegado_id
+            LEFT JOIN efetivo orig_ch ON orig_ch.id = e.chefe_direto_id
             LEFT JOIN fichas_indicacao f ON f.candidato_id = e.id AND f.pleito_id = :p AND f.tipo_avaliacao = 'OBRIGATORIA_CHEFE'
             LEFT JOIN avaliacoes_tacf t ON t.candidato_id = e.id AND t.pleito_id = :p
-            WHERE e.chefe_direto_id = :chefe AND e.ativo = 1 AND e.categoria IN ('graduado', 'praca')
-            ORDER BY e.categoria, e.posto, e.nome
+            WHERE (e.chefe_direto_id = :chefe OR del.oficial_delegado_id = :chefe) 
+              AND e.ativo = 1 
+              AND e.categoria IN ('graduado', 'praca')
+            ORDER BY sou_o_delegado ASC, e.categoria, e.posto, e.nome
         ";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':chefe' => $chefeEfetivoId, ':p' => $pleitoId]);
         return $stmt->fetchAll();
     }
+
+    /**
+     * Verifica se o oficial autenticado é o substituto delegado para avaliar determinado candidato
+     */
+    public static function isOficialDelegado(int $pleitoId, int $candidatoId, int $oficialEfetivoId): bool {
+        if ($oficialEfetivoId <= 0) {
+            return false;
+        }
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare('
+            SELECT id FROM delegacoes_fase1 
+            WHERE pleito_id = :p AND candidato_id = :c AND oficial_delegado_id = :o 
+            LIMIT 1
+        ');
+        $stmt->execute([':p' => $pleitoId, ':c' => $candidatoId, ':o' => $oficialEfetivoId]);
+        return (bool)$stmt->fetchColumn();
+    }
+
+    /**
+     * Lista todos os oficiais ativos aptos a receber delegações de avaliação
+     */
+    public static function listarOficiais(): array {
+        $pdo = Database::getConnection();
+        $postosIn = "'" . implode("','", POSTOS_OFICIAIS) . "'";
+        $sql = "
+            SELECT id, posto, nome, nome_guerra, saram, setor, divisao_sigla
+            FROM efetivo
+            WHERE ativo = 1 AND posto IN ($postosIn)
+            ORDER BY FIELD(posto, 'Ten-Brig', 'Maj-Brig', 'Brig', 'Cel', 'Ten Cel', 'Maj', 'Cap', '1º Ten', '1° Ten', '1S Ten', '1 Ten', '2º Ten', '2° Ten', '2S Ten', '2 Ten'), nome_guerra
+        ";
+        return $pdo->query($sql)->fetchAll();
+    }
+
+    /**
+     * Salva ou atualiza delegação de avaliação da Fase 1 (Oficial em Missão)
+     */
+    public static function salvarDelegacao(int $pleitoId, int $candidatoId, int $oficialDelegadoId, int $designadoPorId, string $motivo): array {
+        $candidato = self::getPorId($candidatoId);
+        if (!$candidato) {
+            return ['sucesso' => false, 'mensagem' => 'Candidato não encontrado.'];
+        }
+
+        $oficial = self::getPorId($oficialDelegadoId);
+        if (!$oficial || !in_array($oficial['posto'], POSTOS_OFICIAIS, true)) {
+            return ['sucesso' => false, 'mensagem' => 'O substituto selecionado deve ser um Oficial ativo da Aeronáutica.'];
+        }
+
+        $motivoLimpo = trim($motivo);
+        if (mb_strlen($motivoLimpo) < 3) {
+            return ['sucesso' => false, 'mensagem' => 'Informe o motivo da substituição/delegação (ex: Chefe em Missão, Afastamento, Férias).'];
+        }
+
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare('
+            INSERT INTO delegacoes_fase1 (pleito_id, candidato_id, oficial_delegado_id, designado_por_id, motivo)
+            VALUES (:p, :c, :o, :u, :m)
+            ON DUPLICATE KEY UPDATE 
+                oficial_delegado_id = VALUES(oficial_delegado_id),
+                designado_por_id    = VALUES(designado_por_id),
+                motivo              = VALUES(motivo),
+                created_at          = CURRENT_TIMESTAMP
+        ');
+        $stmt->execute([
+            ':p' => $pleitoId,
+            ':c' => $candidatoId,
+            ':o' => $oficialDelegadoId,
+            ':u' => $designadoPorId,
+            ':m' => $motivoLimpo
+        ]);
+
+        return [
+            'sucesso'  => true,
+            'mensagem' => "Avaliação de {$candidato['posto']} {$candidato['nome_guerra']} delegada com sucesso ao {$oficial['posto']} {$oficial['nome_guerra']}."
+        ];
+    }
+
+    /**
+     * Remove delegação de avaliação da Fase 1
+     */
+    public static function removerDelegacao(int $pleitoId, int $candidatoId): bool {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare('DELETE FROM delegacoes_fase1 WHERE pleito_id = :p AND candidato_id = :c');
+        return $stmt->execute([':p' => $pleitoId, ':c' => $candidatoId]);
+    }
+
 
     /**
      * Lista todos os candidatos elegíveis para a Fase 1 com status de avaliação

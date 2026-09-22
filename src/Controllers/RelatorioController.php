@@ -13,6 +13,7 @@ class RelatorioController {
      */
     public function placa(): void {
         AuthMiddleware::handle();
+        RoleMiddleware::handle(PERFIL_ADMIN);
         $pleito = Pleito::getAtivo();
 
         if (!$pleito) {
