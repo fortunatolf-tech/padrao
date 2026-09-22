@@ -78,8 +78,11 @@ Se você utiliza Docker no Windows, Linux ou macOS:
 
 ## 🌐 Deploy em Produção (aaPanel / Debian)
 
-Consulte o manual completo com fotos e comandos passo a passo em:  
+Consulte o manual completo com comandos passo a passo em:  
 👉 **[DEPLOY_TUTORIAL.md](DEPLOY_TUTORIAL.md)**
+
+Para o regulamento militar e manual de atribuições por função (Chefe Imediato, Chefe de Divisão, Presidente, Eleitor e STI), consulte a:  
+👉 **[Norma Padrão de Ação (NPA COMARA)](docs/NPA_ELEICAO_PADROES_COMARA.md)**
 
 Resumo dos comandos no servidor Linux / aaPanel:
 ```bash
