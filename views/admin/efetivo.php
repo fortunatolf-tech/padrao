@@ -190,7 +190,7 @@ require_once ROOT_PATH . '/views/layouts/header.php';
                                 </td>
                                 <td>
                                     <code><?= sanitize_output($item['saram'] ?: 'S/SARAM') ?></code><br>
-                                    <small class="text-muted"><?= sanitize_output($item['cpf']) ?></small>
+                                    <small class="text-muted" title="Protegido por LGPD (Art. 6º, III)"><i class="bi bi-shield-lock me-1"></i><?= mascarar_cpf($item['cpf']) ?></small>
                                 </td>
                                 <td>
                                     <span class="badge bg-light text-dark border fw-bold"><?= sanitize_output($item['divisao_sigla']) ?></span>

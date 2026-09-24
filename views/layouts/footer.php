@@ -11,11 +11,114 @@ declare(strict_types=1);
                 <small class="text-muted">Avenida Pedro Álvares Cabral, s/n - Souza, Belém - PA | Diretoria de Infraestrutura da Aeronáutica (DIRINFRA)</small>
             </div>
             <div class="col-md-6 text-center text-md-end">
-                <small class="text-muted">Sistema Eletrônico de Eleição dos Padrões • Versão <?= APP_VERSION ?></small>
+                <small class="text-muted d-block d-md-inline mb-1 mb-md-0">Sistema Eletrônico de Eleição dos Padrões • Versão <?= APP_VERSION ?></small>
+                <span class="mx-2 d-none d-md-inline text-muted">•</span>
+                <a href="#" class="text-decoration-none text-muted small" data-bs-toggle="modal" data-bs-target="#modalLgpd">
+                    <i class="bi bi-shield-check text-success me-1"></i>Privacidade &amp; LGPD
+                </a>
             </div>
         </div>
     </div>
 </footer>
+
+<!-- Modal Institucional LGPD e Governança de Dados -->
+<div class="modal fade" id="modalLgpd" tabindex="-1" aria-labelledby="modalLgpdLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalLgpdLabel">
+                    <i class="bi bi-shield-check me-2"></i>Aviso de Privacidade e Conformidade LGPD
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body p-4 text-dark" style="font-size: 0.93rem; line-height: 1.6;">
+                <div class="alert alert-primary d-flex align-items-center mb-4" role="alert">
+                    <i class="bi bi-info-circle-fill fs-3 me-3 text-primary"></i>
+                    <div>
+                        <strong>Governança e Proteção de Dados (Lei nº 13.709/2018 - LGPD)</strong><br>
+                        Este sistema foi desenvolvido segundo os preceitos de <em>Privacy by Design</em> e <em>Privacy by Default</em>, assegurando transparência, inviolabilidade do voto e integridade no tratamento de dados pessoais no âmbito da COMARA / COMAER.
+                    </div>
+                </div>
+
+                <h6 class="fw-bold text-primary border-bottom pb-1 mb-2">
+                    <i class="bi bi-bank me-2"></i>1. Controlador e Base Legal do Tratamento
+                </h6>
+                <p>
+                    O tratamento de dados cadastrais e funcionais (SARAM, Nome, Posto/Graduação, Quadro, Especialidade, Setor e CPF) é conduzido pela <strong>Comissão de Aeroportos da Região Amazônica (COMARA)</strong> e pelo <strong>Comando da Aeronáutica (COMAER)</strong> com fundamento no <strong>Art. 7º, inciso III</strong> e no <strong>Art. 23 da Lei nº 13.709/2018 (LGPD)</strong> — tratamento realizado pela administração pública para cumprimento de obrigação legal e execução de políticas públicas regimentais de valorização do mérito institucional (eleição dos Padrões).
+                </p>
+
+                <h6 class="fw-bold text-primary border-bottom pb-1 mb-2 mt-4">
+                    <i class="bi bi-diagram-3 me-2"></i>2. Princípio da Minimização e Finalidade (Art. 6º, III)
+                </h6>
+                <p>
+                    A plataforma processa estritamente os dados essenciais para:
+                </p>
+                <ul class="mb-3">
+                    <li>Identificação funcional inequívoca do eleitor e dos candidatos elegíveis;</li>
+                    <li>Lançamento de notas pelo Chefe Imediato (Fase 1) e validação pelo Chefe de Divisão (Fase 2);</li>
+                    <li>Garantia de quórum e controle de voto único no pleito democrático (Fase 3).</li>
+                </ul>
+                <p class="text-muted small">
+                    <em>Nota: Nenhum dado de natureza sensível (conhecimento político, convicção religiosa, dados de saúde, genéticos ou filiação sindical) é coletado ou admitido na aplicação.</em>
+                </p>
+
+                <h6 class="fw-bold text-primary border-bottom pb-1 mb-2 mt-4">
+                    <i class="bi bi-safe me-2"></i>3. Anonimização Criptográfica e Inviolabilidade do Voto
+                </h6>
+                <p>
+                    Em consonância com as garantias do sigilo eleitoral e o Art. 12 da LGPD, a urna eletrônica utiliza <strong>desacoplamento criptográfico de via única</strong>:
+                </p>
+                <div class="bg-light border rounded p-3 mb-3">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <span class="badge bg-secondary mb-1">Registro de Comparecimento</span>
+                            <div class="small">
+                                O CPF do eleitor é transformado em <code>HASH SHA-256</code> irreversível na tabela <code>eleitores_ciclo</code>, registrando apenas que o militar/servidor compareceu à eleição para emissão do comprovante digital de votação.
+                            </div>
+                        </div>
+                        <div class="col-md-6 border-start ps-md-3">
+                            <span class="badge bg-success mb-1">Cédula Anonimizada</span>
+                            <div class="small">
+                                Os votos são gravados na tabela <code>urna_votos</code> <strong>sem qualquer vínculo</strong> de identificação, usuário, IP ou chave estrangeira com o eleitor. Marcas temporais são arredondadas para inviabilizar correlação cronológica.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold text-primary border-bottom pb-1 mb-2 mt-4">
+                    <i class="bi bi-shield-lock me-2"></i>4. Segurança da Informação e Privacidade por Padrão
+                </h6>
+                <ul class="mb-3">
+                    <li><strong>Credenciais Criptografadas:</strong> As senhas são armazenadas exclusivamente utilizando funções criptográficas de derivação com <code>BCRYPT</code> e salt dinâmico individual.</li>
+                    <li><strong>Mascaramento Visual de Dados:</strong> Visualizações administrativas de documentos (CPF) aplicam ofuscação (<code>***.XXX.XXX-**</code>) para mitigar exposições involuntárias.</li>
+                    <li><strong>Rastreabilidade de Auditoria:</strong> Ações administrativas críticas de transição de fases, justificativas e delegações são registradas em logs de auditoria imutáveis.</li>
+                </ul>
+
+                <h6 class="fw-bold text-primary border-bottom pb-1 mb-2 mt-4">
+                    <i class="bi bi-person-check me-2"></i>5. Direitos do Titular e Canais de Contato
+                </h6>
+                <p>
+                    Em conformidade com o Art. 18 da LGPD, os titulares podem solicitar esclarecimentos ou retificações cadastrais relativas aos seus dados funcionais junto à:
+                </p>
+                <div class="card bg-light border-0 p-3">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-headset fs-2 text-primary me-3"></i>
+                        <div>
+                            <strong>Seção de Tecnologia da Informação (STI) — COMARA</strong><br>
+                            <span class="text-muted small">Canal institucional de suporte aos sistemas e governança local de TI.</span><br>
+                            <span class="text-muted small">Ouvidoria COMAER / Plataforma Fala.BR: <a href="https://falabr.cgu.gov.br" target="_blank" rel="noopener" class="text-primary text-decoration-none">falabr.cgu.gov.br</a></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                    <i class="bi bi-check2-circle me-1"></i>Entendido e Ciente
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Bootstrap 5 Bundle JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

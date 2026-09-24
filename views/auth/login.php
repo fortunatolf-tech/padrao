@@ -41,7 +41,7 @@ require_once ROOT_PATH . '/views/layouts/header.php';
                 <div class="text-center mt-3 pt-3 border-top">
                     <button type="button" 
                             id="btnSuporteSenha"
-                            class="btn btn-sm btn-link text-decoration-none text-muted"
+                            class="btn btn-sm btn-link text-decoration-none text-muted mb-1"
                             data-bs-toggle="popover" 
                             data-bs-placement="bottom"
                             data-bs-trigger="focus"
@@ -60,6 +60,11 @@ require_once ROOT_PATH . '/views/layouts/header.php';
                             &lt;/div&gt;">
                         <i class="bi bi-question-circle-fill text-primary me-1"></i> Esqueceu a senha ou primeiro acesso?
                     </button>
+                    <div>
+                        <a href="#" class="btn btn-sm btn-link text-decoration-none text-muted small" data-bs-toggle="modal" data-bs-target="#modalLgpd">
+                            <i class="bi bi-shield-check text-success me-1"></i> Aviso de Privacidade &amp; Conformidade LGPD
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

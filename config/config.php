@@ -170,3 +170,18 @@ function flash_message(string $key, ?string $message = null, string $type = 'inf
 function sanitize_output(?string $data): string {
     return htmlspecialchars((string)$data, ENT_QUOTES, 'UTF-8');
 }
+
+/**
+ * Mascara o CPF para visualização segura em conformidade com a LGPD (Privacy by Default)
+ * Exemplo: 123.456.789-00 -> ***.456.789-**
+ */
+function mascarar_cpf(?string $cpf): string {
+    if (!$cpf) {
+        return '';
+    }
+    $digits = preg_replace('/\D/', '', $cpf);
+    if (strlen($digits) !== 11) {
+        return sanitize_output($cpf);
+    }
+    return '***.' . substr($digits, 3, 3) . '.' . substr($digits, 6, 3) . '-**';
+}
