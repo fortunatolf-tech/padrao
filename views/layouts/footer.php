@@ -94,21 +94,11 @@ declare(strict_types=1);
                     <li><strong>Rastreabilidade de Auditoria:</strong> Ações administrativas críticas de transição de fases, justificativas e delegações são registradas em logs de auditoria imutáveis.</li>
                 </ul>
 
-                <h6 class="fw-bold text-primary border-bottom pb-1 mb-2 mt-4">
-                    <i class="bi bi-person-check me-2"></i>5. Direitos do Titular e Canais de Contato
-                </h6>
-                <p>
-                    Em conformidade com o Art. 18 da LGPD, os titulares podem solicitar esclarecimentos ou retificações cadastrais relativas aos seus dados funcionais junto à:
-                </p>
-                <div class="card bg-light border-0 p-3">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-headset fs-2 text-primary me-3"></i>
-                        <div>
-                            <strong>Seção de Tecnologia da Informação (STI) — COMARA</strong><br>
-                            <span class="text-muted small">Canal institucional de suporte aos sistemas e governança local de TI.</span><br>
-                            <span class="text-muted small">Ouvidoria COMAER / Plataforma Fala.BR: <a href="https://falabr.cgu.gov.br" target="_blank" rel="noopener" class="text-primary text-decoration-none">falabr.cgu.gov.br</a></span>
-                        </div>
-                    </div>
+                <div class="card bg-light border-0 p-3 mt-4 text-center">
+                    <span class="text-muted small">
+                        <i class="bi bi-laptop me-1 text-primary"></i>
+                        <strong>Sistema Eletrônico de Eleição dos Padrões</strong> - Sistema desenvolvido pela equipe da STI da COMARA
+                    </span>
                 </div>
             </div>
             <div class="modal-footer bg-light">
